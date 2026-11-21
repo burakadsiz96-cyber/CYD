@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Poker Kazanma Oranı</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: masa (seçili kartlar + sonuç) üstte, kart destesi altta; geniş ekranda iki sütun. Tek görünüm: koyu çuha yeşili masa. */
+:root {
+  --felt: #0d3327;
+  --felt-hi: #134536;
+  --panel: #0a2a20;
+  --line: #2a5a49;
+  --ink: #eef3ee;
+  --muted: #9fbcae;
+  --brass: #e0b65a;
+  --card: #f8f6f0;
+  --card-edge: #d7d2c4;
+  --spade: #1b1f24;
+  --heart: #d0312d;
+  --diamond: #2563c9;
+  --club: #1d8a4a;
+  --win: #4fd18b;
+  --tie: #e0b65a;
+  --lose: #e0625a;
+  --f-display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at 50% 0%, var(--felt-hi), var(--felt) 60%) fixed, var(--felt);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+  min-height: 100%;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 20px; }
+header h1 {
+  font-family: var(--f-display); font-weight: 800; font-size: clamp(30px, 6vw, 46px);
+  letter-spacing: .02em; text-transform: uppercase; margin: 0; line-height: 1; text-wrap: balance;
+}
+header h1 span { color: var(--brass); }
+header p { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+.layout { display: grid; gap: 20px; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: start; }
+@media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
+.label { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+.group { display: grid; gap: 6px; }
+.slots { display: flex; gap: 6px; }
+.gap { width: 6px; }
+
+/* Kart */
+.slot, .pcard {
+  font-family: var(--f-mono); font-weight: 700; border-radius: 7px; position: relative;
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  line-height: 1; user-select: none;
+}
+.slot {
+  width: 52px; height: 74px; border: 2px dashed var(--line); background: transparent; color: var(--muted);
+  cursor: pointer; font-size: 11px; font-family: var(--f-body); font-weight: 500; padding: 0;
+}
+.slot.active { border-color: var(--brass); box-shadow: 0 0 0 3px rgba(224,182,90,.25); }
+.slot.filled { background: var(--card); border: 1px solid var(--card-edge); border-style: solid; box-shadow: 0 2px 0 rgba(0,0,0,.35); font-family: var(--f-mono); }
+.slot.filled.active { border-color: var(--brass); box-shadow: 0 0 0 3px rgba(224,182,90,.45); }
+.slot .r { font-size: 24px; font-weight: 700; }
+.slot .s { font-size: 22px; margin-top: 2px; }
+.slot .x { position: absolute; top: 2px; right: 4px; font-size: 11px; color: #8a8577; font-family: var(--f-body); }
+.c0 { color: var(--spade); } .c1 { color: var(--heart); } .c2 { color: var(--diamond); } .c3 { color: var(--club); }
+@media (max-width: 420px) { .slot { width: 44px; height: 64px; } .slot .r { font-size: 20px; } .slot .s { font-size: 18px; } }
+
+/* Deste */
+.deck { display: grid; gap: 5px; }
+.suitrow { display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); gap: 4px; }
+.pcard {
+  aspect-ratio: 5 / 7; max-width: 100%; background: var(--card); border: 1px solid var(--card-edge);
+  cursor: pointer; padding: 0; font-size: clamp(11px, 2.6vw, 16px); gap: 1px; transition: transform .08s;
+}
+.pcard .s { font-size: .95em; }
+.pcard:hover:not(:disabled) { transform: translateY(-2px); }
+.pcard:disabled { opacity: .18; cursor: not-allowed; }
+.pcard:focus-visible, .slot:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+/* Kontroller */
+.btn {
+  font: 500 13px var(--f-body); color: var(--ink); background: transparent; border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 12px; cursor: pointer;
+}
+.btn:hover { border-color: var(--brass); color: var(--brass); }
+.opps { display: flex; gap: 4px; flex-wrap: wrap; }
+.opp {
+  font: 700 14px var(--f-mono); width: 34px; height: 34px; border-radius: 50%; cursor: pointer;
+  background: transparent; color: var(--ink); border: 1px solid var(--line);
+}
+.opp[aria-pressed="true"] { background: var(--brass); color: #1d1606; border-color: var(--brass); }
+
+/* Sonuç */
+.big { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.big .num { font-family: var(--f-display); font-weight: 800; font-size: clamp(64px, 14vw, 96px); line-height: .9; font-variant-numeric: tabular-nums; }
+.big .unit { font-family: var(--f-display); font-weight: 600; font-size: 28px; color: var(--muted); }
+.verdict { display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; border: 1px solid currentColor; }
+.bar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--line); }
+.bar i { display: block; height: 100%; transition: width .2s; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stat { display: grid; gap: 2px; }
+.stat b { font: 700 20px var(--f-mono); font-variant-numeric: tabular-nums; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.current { font-size: 14px; color: var(--muted); }
+.current strong { color: var(--ink); font-weight: 600; }
+.meta { font: 500 12px var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.dist { display: grid; gap: 5px; }
+.drow { display: grid; grid-template-columns: 9.5em minmax(0, 1fr) 4.2em; gap: 8px; align-items: center; font-size: 13px; }
+.drow .track { height: 8px; background: rgba(255,255,255,.06); border-radius: 4px; overflow: hidden; }
+.drow .track i { display: block; height: 100%; background: var(--brass); border-radius: 4px; }
+.drow .p { font: 500 12px var(--f-mono); text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.drow.now span:first-child { color: var(--brass); font-weight: 600; }
+.pot { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.pot label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+.pot input {
+  font: 500 15px var(--f-mono); color: var(--ink); background: var(--felt); border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 10px; width: 100%;
+}
+.potout { font-size: 14px; }
+.potout b { font-family: var(--f-mono); }
+.hint { font-size: 13px; color: var(--muted); margin: 0; }
+#result { display: grid; gap: 14px; }
+.empty { color: var(--muted); font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { .pcard, .bar i { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="wrap" lang="tr">
+  <header>
+    <h1>Poker <span>Kazanma Oranı</span></h1>
+    <p>Elindeki 2 kartı ve masadaki kartları seç, rakip sayısını belirle. Oran, kalan kartlar binlerce kez rastgele dağıtılarak (Monte Carlo) hesaplanır ve sen seçim yaptıkça güncellenir.</p>
+  </header>
+
+  <div class="layout">
+    <section class="panel" aria-label="Kart seçimi">
+      <div class="row">
+        <div class="group">
+          <span class="label">Senin elin</span>
+          <div class="slots" id="hero"></div>
+        </div>
+        <div class="gap"></div>
+        <div class="group">
+          <span class="label">Masa · Flop / Turn / River</span>
+          <div class="slots" id="board"></div>
+        </div>
+      </div>
+      <p class="hint" id="hint">Sarı çerçeveli yuvaya kart eklenir. Dolu bir karta dokunursan o kart kaldırılır.</p>
+      <div class="deck" id="deck" aria-label="Deste"></div>
+      <div class="row">
+        <div class="group">
+          <span class="label">Rakip sayısı</span>
+          <div class="opps" id="opps"></div>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn" id="clearBoard" type="button">Masayı temizle</button>
+        <button class="btn" id="clearAll" type="button">Hepsini temizle</button>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Sonuç" aria-live="polite">
+      <div id="result"></div>
+      <div class="group">
+        <span class="label">Pot oranı</span>
+        <div class="pot">
+          <label for="potSize">Ortadaki para (pot)<input id="potSize" type="number" min="0" step="any" value="100" inputmode="decimal"></label>
+          <label for="callSize">Ödemen gereken (call)<input id="callSize" type="number" min="0" step="any" value="25" inputmode="decimal"></label>
+        </div>
+        <div class="potout" id="potOut"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  const RANKS = "23456789TJQKA";
+  const RLABEL = ["2","3","4","5","6","7","8","9","10","J","Q","K","A"];
+  const SUITS = ["♠","♥","♦","♣"];
+  const SUITNAME = ["Maça","Kupa","Karo","Sinek"];
+  const CATS = ["Yüksek kart","Bir çift (per)","İki çift (döper)","Üçlü","Kent (sıralı)","Renk (floş)","Full house","Kare","Sıralı renk"];
+  const TARGET = 150000;   // toplam simülasyon
+  const CHUNK = 3000;      // kare başına
+
+  // ---------- El değerlendirici (5–7 kart) ----------
+  const STR = new Int8Array(8192);
+  for (let m = 0; m < 8192; m++) {
+    STR[m] = -1;
+    for (let h = 12; h >= 4; h--) { const k = 0x1F << (h - 4); if ((m & k) === k) { STR[m] = h; break; } }
+    if (STR[m] < 0 && (m & 0x100F) === 0x100F) STR[m] = 3;
+  }
+  function top(mask, n) { let out = 0, got = 0; for (let r = 12; r >= 0 && got < n; r--) if (mask >> r & 1) { out = out << 4 | r; got++; } return out << (4 * (n - got)); }
+  const cnt = new Int8Array(13), sc = new Int8Array(4), sm = new Int16Array(4);
+  function evalCards(cs, n) {
+    cnt.fill(0); sc.fill(0); sm.fill(0);
+    let rm = 0;
+    for (let i = 0; i < n; i++) { const c = cs[i], r = c >> 2, s = c & 3; cnt[r]++; sc[s]++; sm[s] |= 1 << r; rm |= 1 << r; }
+    for (let s = 0; s < 4; s++) if (sc[s] >= 5) {
+      const h = STR[sm[s]];
+      return h >= 0 ? (8 << 20) | h : (5 << 20) | top(sm[s], 5);
+    }
+    let q = -1, t1 = -1, t2 = -1, p1 = -1, p2 = -1;
+    for (let r = 12; r >= 0; r--) {
+      const c = cnt[r];
+      if (c === 4) q = r;
+      else if (c === 3) { if (t1 < 0) t1 = r; else if (t2 < 0) t2 = r; }
+      else if (c === 2) { if (p1 < 0) p1 = r; else if (p2 < 0) p2 = r; }
+    }
+    if (q >= 0) return (7 << 20) | q << 4 | top(rm & ~(1 << q), 1);
+    if (t1 >= 0 && (t2 >= 0 || p1 >= 0)) return (6 << 20) | t1 << 4 | Math.max(t2, p1);
+    const h = STR[rm]; if (h >= 0) return (4 << 20) | h;
+    if (t1 >= 0) return (3 << 20) | t1 << 8 | top(rm & ~(1 << t1), 2);
+    if (p1 >= 0 && p2 >= 0) return (2 << 20) | p1 << 8 | p2 << 4 | top(rm & ~(1 << p1) & ~(1 << p2), 1);
+    if (p1 >= 0) return (1 << 20) | p1 << 12 | top(rm & ~(1 << p1), 3);
+    return top(rm, 5);
+  }
+
+  // ---------- Durum ----------
+  // yuvalar: 0-1 el, 2-6 masa
+  const slots = [48, 44, 40, 37, 8, -1, -1]; // örnek: A♠ K♠ | Q♠ J♥ 4♠
+  let active = 5, opponents = 2;
+  let sim = null;
+
+  const $ = id => document.getElementById(id);
+  const heroEl = $("hero"), boardEl = $("board"), deckEl = $("deck"), oppsEl = $("opps"), resEl = $("result");
+
+  function cardHTML(c) { return `<span class="r c${c & 3}">${RLABEL[c >> 2]}</span><span class="s c${c & 3}">${SUITS[c & 3]}</span>`; }
+  const SLOTNAME = ["1. kart", "2. kart", "Flop", "Flop", "Flop", "Turn", "River"];
+
+  function buildSlots() {
+    [heroEl, boardEl].forEach(el => el.innerHTML = "");
+    slots.forEach((c, i) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.id = "slot" + i;
+      b.className = "slot" + (c >= 0 ? " filled" : "") + (i === active ? " active" : "");
+      if (c >= 0) { b.innerHTML = cardHTML(c) + '<span class="x" aria-hidden="true">×</span>'; b.setAttribute("aria-label", `${SLOTNAME[i]}: ${RLABEL[c >> 2]} ${SUITNAME[c & 3]}, kaldırmak için dokun`); }
+      else { b.textContent = SLOTNAME[i]; b.setAttribute("aria-label", `${SLOTNAME[i]} yuvası, boş`); }
+      b.addEventListener("click", () => {
+        if (slots[i] >= 0) slots[i] = -1;
+        active = i;
+        render(); restart();
+      });
+      (i < 2 ? heroEl : boardEl).appendChild(b);
+    });
+  }
+
+  function buildDeck() {
+    deckEl.innerHTML = "";
+    const used = new Set(slots.filter(c => c >= 0));
+    for (let s = 0; s < 4; s++) {
+      const row = document.createElement("div"); row.className = "suitrow";
+      for (let r = 12; r >= 0; r--) {
+        const c = r * 4 + s;
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "pcard"; b.id = "card" + c;
+        b.innerHTML = cardHTML(c);
+        b.disabled = used.has(c);
+        b.setAttribute("aria-label", `${RLABEL[r]} ${SUITNAME[s]}`);
+        b.addEventListener("click", () => pick(c));
+        row.appendChild(b);
+      }
+      deckEl.appendChild(row);
+    }
+  }
+
+  function nextEmpty(from) {
+    for (let k = 0; k < 7; k++) { const i = (from + k) % 7; if (slots[i] < 0) return i; }
+    return -1;
+  }
+  function pick(c) {
+    let i = active;
+    if (i < 0 || slots[i] >= 0) i = nextEmpty(0);
+    if (i < 0) return;
+    slots[i] = c;
+    active = nextEmpty(i);
+    render(); restart();
+  }
+
+  function buildOpps() {
+    oppsEl.innerHTML = "";
+    for (let n = 1; n <= 9; n++) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "opp"; b.textContent = n; b.id = "opp" + n;
+      b.setAttribute("aria-pressed", n === opponents ? "true" : "false");
+      b.setAttribute("aria-label", `${n} rakip`);
+      b.addEventListener("click", () => { opponents = n; buildOpps(); restart(); });
+      oppsEl.appendChild(b);
+    }
+  }
+
+  function render() { buildSlots(); buildDeck(); }
+
+  // ---------- Simülasyon ----------
+  function restart() {
+    if (sim && sim.raf) cancelAnimationFrame(sim.raf);
+    const hero = slots.slice(0, 2).filter(c => c >= 0);
+    const board = slots.slice(2).filter(c => c >= 0);
+    if (hero.length < 2) { sim = null; showEmpty(hero.length); return; }
+    const used = new Set(hero.concat(board));
+    const deck = []; for (let c = 0; c < 52; c++) if (!used.has(c)) deck.push(c);
+    sim = { hero, board, deck, opps: opponents, n: 0, win: 0, tie: 0, eq: 0, cats: new Float64Array(9), raf: 0 };
+    const s = sim;
+    const step = () => { if (s !== sim) return; runChunk(s, CHUNK); showResult(s); if (s.n < TARGET) s.raf = requestAnimationFrame(step); };
+    step();
+  }
+
+  function runChunk(s, iters) {
+    const need = 5 - s.board.length, d = s.deck, L = d.length, opps = s.opps;
+    const hand = new Int8Array(7), boardFull = new Int8Array(5);
+    for (let i = 0; i < s.board.length; i++) boardFull[i] = s.board[i];
+    const draws = need + 2 * opps;
+    if (draws > L) return;
+    for (let it = 0; it < iters; it++) {
+      // kısmi Fisher–Yates
+      for (let k = 0; k < draws; k++) { const j = k + ((Math.random() * (L - k)) | 0); const t = d[k]; d[k] = d[j]; d[j] = t; }
+      for (let k = 0; k < need; k++) boardFull[s.board.length + k] = d[k];
+      for (let k = 0; k < 5; k++) hand[k] = boardFull[k];
+      hand[5] = s.hero[0]; hand[6] = s.hero[1];
+      const hv = evalCards(hand, 7);
+      s.cats[hv >> 20]++;
+      let best = 0, ties = 0, lost = false;
+      for (let o = 0; o < opps; o++) {
+        hand[5] = d[need + 2 * o]; hand[6] = d[need + 2 * o + 1];
+        const ov = evalCards(hand, 7);
+        if (ov > hv) { lost = true; break; }
+        if (ov === hv) ties++;
+      }
+      if (!lost) { if (ties === 0) s.win++; else { s.tie++; s.eq += 1 / (ties + 1); } }
+      s.n++;
+    }
+  }
+
+  function pct(x, d = 1) { return (x * 100).toFixed(d).replace(".", ",") + "%"; }
+  function currentHand(s) {
+    const cs = s.hero.concat(s.board);
+    if (cs.length < 5) {
+      if ((s.hero[0] >> 2) === (s.hero[1] >> 2) && s.board.length === 0) return { cat: 1, txt: `Cep çift (${RLABEL[s.hero[0] >> 2]}${RLABEL[s.hero[0] >> 2]})` };
+      if (s.board.length === 0) {
+        const suited = (s.hero[0] & 3) === (s.hero[1] & 3);
+        const a = Math.max(s.hero[0] >> 2, s.hero[1] >> 2), b = Math.min(s.hero[0] >> 2, s.hero[1] >> 2);
+        return { cat: 0, txt: `${RLABEL[a]}${RLABEL[b]} ${suited ? "aynı renk (suited)" : "farklı renk (offsuit)"} · flop öncesi` };
+      }
+    }
+    const v = evalCards(cs, cs.length);
+    return { cat: v >> 20, txt: CATS[v >> 20] };
+  }
+
+  function showEmpty(k) {
+    resEl.innerHTML = `<div class="group"><span class="label">Kazanma oranın</span>
+      <p class="empty">${k === 0 ? "Başlamak için desteden elindeki 2 kartı seç." : "Elindeki ikinci kartı seç."} Masadaki kartlar isteğe bağlı: boş bırakırsan flop öncesi oran hesaplanır.</p></div>`;
+    updatePot(null);
+  }
+
+  function showResult(s) {
+    const n = s.n || 1;
+    const equity = (s.win + s.eq) / n, w = s.win / n, t = s.tie / n, l = 1 - w - t;
+    const fair = 1 / (s.opps + 1);
+    let v, col;
+    if (equity >= Math.min(0.85, fair * 2)) { v = "Çok güçlü"; col = "var(--win)"; }
+    else if (equity >= fair * 1.25) { v = "Avantajlı"; col = "var(--win)"; }
+    else if (equity >= fair * 0.8) { v = "Ortalama"; col = "var(--tie)"; }
+    else { v = "Zayıf"; col = "var(--lose)"; }
+    const cur = currentHand(s);
+    const stage = ["Flop öncesi", "", "", "Flop", "Turn", "River"][s.board.length] || `${s.board.length} kart masada`;
+    const maxCat = Math.max(...s.cats);
+    let dist = "";
+    for (let c = 8; c >= 0; c--) {
+      const p = s.cats[c] / n;
+      if (p < 0.0005 && c !== cur.cat) continue;
+      dist += `<div class="drow${c === cur.cat && s.board.length >= 3 ? " now" : ""}"><span>${CATS[c]}</span><div class="track"><i style="width:${maxCat ? (s.cats[c] / maxCat * 100).toFixed(1) : 0}%"></i></div><span class="p">${pct(p)}</span></div>`;
+    }
+    resEl.innerHTML = `
+      <div class="group">
+        <span class="label">Kazanma oranın (equity) · ${stage} · ${s.opps} rakip</span>
+        <div class="big"><span class="num">${(equity * 100).toFixed(1).replace(".", ",")}</span><span class="unit">%</span>
+          <span class="verdict" style="color:${col}">${v}</span></div>
+        <div class="current">Şu anki elin: <strong>${cur.txt}</strong> · Rastgele bir elin ortalaması ${pct(fair, 0)}</div>
+      </div>
+      <div class="bar" role="img" aria-label="Kazan ${pct(w)}, berabere ${pct(t)}, kaybet ${pct(l)}">
+        <i style="width:${w * 100}%;background:var(--win)"></i><i style="width:${t * 100}%;background:var(--tie)"></i><i style="width:${l * 100}%;background:var(--lose)"></i>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="label"><span class="dot" style="background:var(--win)"></span>Kazan</span><b>${pct(w)}</b></div>
+        <div class="stat"><span class="label"><span class="dot" style="background:var(--tie)"></span>Berabere</span><b>${pct(t)}</b></div>
+        <div class="stat"><span class="label"><span class="dot" style="background:var(--lose)"></span>Kaybet</span><b>${pct(l)}</b></div>
+      </div>
+      <div class="group">
+        <span class="label">El sonunda elinin olma ihtimali</span>
+        <div class="dist">${dist}</div>
+      </div>
+      <div class="meta">${s.n.toLocaleString("tr-TR")} / ${TARGET.toLocaleString("tr-TR")} simülasyon${s.n < TARGET ? " · hesaplanıyor…" : " · tamamlandı (±0,3%)"}</div>`;
+    updatePot(equity);
+  }
+
+  let lastEq = null;
+  function updatePot(eq) {
+    if (eq !== undefined) lastEq = eq;
+    const pot = parseFloat($("potSize").value), call = parseFloat($("callSize").value);
+    const out = $("potOut");
+    if (!(pot >= 0) || !(call > 0)) { out.innerHTML = `<span class="hint">Pot ve call miktarını gir; call'un kârlı olup olmadığını gösterelim.</span>`; return; }
+    const need = call / (pot + call);
+    let msg = `Call için gereken oran: <b>${pct(need)}</b>`;
+    if (lastEq != null) {
+      const ok = lastEq >= need;
+      msg += ` · Senin oranın: <b>${pct(lastEq)}</b> → <b style="color:${ok ? "var(--win)" : "var(--lose)"}">${ok ? "Call matematiksel olarak kârlı" : "Fold daha mantıklı"}</b>`;
+    }
+    out.innerHTML = msg;
+  }
+  $("potSize").addEventListener("input", () => updatePot());
+  $("callSize").addEventListener("input", () => updatePot());
+
+  $("clearBoard").addEventListener("click", () => { for (let i = 2; i < 7; i++) slots[i] = -1; active = nextEmpty(2); render(); restart(); });
+  $("clearAll").addEventListener("click", () => { slots.fill(-1); active = 0; render(); restart(); });
+
+  render(); buildOpps(); restart();
+})();
+</script>
+</body>
+</html>
