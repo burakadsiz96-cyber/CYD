@@ -48,6 +48,37 @@ for m in bpy.data.materials:
         p.inputs["Roughness"].default_value = 0.42
         p.inputs["Metallic"].default_value = 0.0
 
+# palet (6. argüman, JSON): {"parça_adı_başı": "#hex", ..., "buzlu": ["parça", ...]}
+import json
+
+palette = json.loads(sys.argv[6]) if len(sys.argv) > 6 else {}
+frosted = set(palette.pop("buzlu", []))
+
+
+def _hex(h):
+    h = h.lstrip("#")
+    srgb = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+    return tuple(c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in srgb) + (1.0,)
+
+
+for ob in bpy.data.objects:
+    if ob.type != "MESH":
+        continue
+    key = next((k for k in list(palette) + list(frosted) if ob.name.startswith(k)), None)
+    if key is None:
+        continue
+    mat = bpy.data.materials.new(ob.name + "_palet")
+    mat.use_nodes = True
+    q = mat.node_tree.nodes["Principled BSDF"]
+    q.inputs["Base Color"].default_value = _hex(palette.get(key, "#e8eef0"))
+    q.inputs["Roughness"].default_value = 0.42
+    if key in frosted:
+        q.inputs["Transmission Weight"].default_value = 0.95
+        q.inputs["Roughness"].default_value = 0.32
+        q.inputs["IOR"].default_value = 1.5
+    ob.data.materials.clear()
+    ob.data.materials.append(mat)
+
 # yüzey kipi (5. argüman): "buzlu" -> govde/cerceve yarı saydam buzlu plastik; "mat" -> opak
 surface = sys.argv[5] if len(sys.argv) > 5 else "mat"
 for ob in bpy.data.objects:
@@ -109,7 +140,7 @@ scene.cycles.samples = samples
 scene.cycles.use_denoising = True
 scene.render.compositor_device = "CPU"
 scene.view_settings.view_transform = "AgX"
-scene.view_settings.look = "AgX - Medium High Contrast"
+scene.view_settings.look = "AgX - Punchy"
 scene.render.filepath = str(out)
 bpy.ops.render.render(write_still=True)
 print("yazildi", out)
