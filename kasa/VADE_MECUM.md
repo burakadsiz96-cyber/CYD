@@ -4,6 +4,11 @@
 verilen ad. Bu kasa, ESP32-2432S028R'yi (CYD 2.8") eski bir kütüphaneden çıkmış gibi duran, deri ciltli
 küçük bir kitaba dönüştürüyor. Tıp okuyan, old money tarzını seven biri için tasarlandı.
 
+<p align="center">
+  <img src="render/vademecum/on_konyak.png" width="300" alt="Konyak deri, dikey duruş">
+  <img src="render/vademecum/yatay_konyak.png" width="420" alt="Yatay duruş">
+</p>
+
 | Kitap parçası | İşlevi |
 |---|---|
 | Ön kapak | Ekran, varak çerçeveli bir levha gibi kapakta duruyor. Üstte yaldız başlık levhası, altta Asklepios asalı arma, ön kenar köşelerinde pirinç köşelikler var |
@@ -52,7 +57,9 @@ Bu kontroller genel tasarım kuralları; önce küçük parçalarla yazıcının
 - LiPo 503450 (5×34×50 mm, ~1000 mAh, korumalı)
 - TP4056 USB-C şarj modülü (~28×17 mm); USB-C girişi kitabın başında
 - SS12D00 sürgülü anahtar (kitabın başında, sırta yakın)
-- İsteğe bağlı 5 V yükseltici: CYD'nin 5 V girişi pil gerilimiyle sınırda çalışır
+- Önerilen: küçük bir 5 V yükseltici (~22×12 mm sınıfı). CYD'nin 5 V girişindeki 3,3 V regülatörü pil
+  gerilimiyle (3,7–4,2 V) sınırda çalışır; pil boşaldıkça ekran kararır ya da kart yeniden başlar.
+  Arka kapakta, TP4056'nın solunda ~25×33 mm boş yer var.
 
 ## Montaj
 
@@ -66,8 +73,9 @@ Bu kontroller genel tasarım kuralları; önce küçük parçalarla yazıcının
    - pili tırnakların arasına bantla;
    - TP4056'yı raylara USB-C başa bakacak şekilde yerleştir.
 
-   Anahtarı sayfa bloğunun baştaki cebine yerleştir. Kablolama: pil → TP4056 B+/B−, OUT+ → anahtar → CYD 5 V,
-   OUT− → GND.
+   Anahtarı sayfa bloğunun baştaki cebine yerleştir. Kablolama: pil → TP4056 B+/B−, OUT+ → anahtar →
+   yükselticinin girişi, yükselticinin 5 V çıkışı → CYD 5 V, eksiler → GND. Yükseltici yoksa OUT+ anahtardan
+   doğrudan CYD 5 V'a gider.
 7. Arka kapağı kapat (ön kenar-kuyruk köşesindeki pim yerine oturur). 3× M3×10 havşa başlıyı tak,
    3 arka köşeliği vidaların üstüne bastır.
 8. Kapitalbandı kalemin arka ucuna bastır, kalemi sırtın tepesinden tünele it.
@@ -84,3 +92,35 @@ Bu kontroller genel tasarım kuralları; önce küçük parçalarla yazıcının
 | `ayak_acisi` | 40° | Ayak durdurağı; büyütürsen kitap daha çok yaslanır |
 
 Değiştirip `cad run vademecum.py` çalıştır, sonra çıktıları yeniden dışa aktar.
+
+## Görseller
+
+`render/vademecum/` klasöründe. Blender/Cycles ile `render3.py` çizdi; ekrandaki sayfa da render'ın parçası.
+
+| Dosya | Ne gösteriyor |
+|---|---|
+| `on_konyak.png`, `on_yesil.png`, `on_siyah.png` | Üç renk seçeneği, dikey duruş |
+| `yatay_konyak.png` | Yatay duruş, sırt yukarıda |
+| `kalem_konyak.png` | Kalem sırttan çekilmiş; kırmızı kapitalbant kalemin başlığı |
+| `arka_konyak.png`, `arka_siyah.png` | Arka kapak ve açık şövale ayağı |
+| `patlatma_konyak.png` | Bütün parçalar ayrık |
+
+<p align="center">
+  <img src="render/vademecum/on_yesil.png" width="240" alt="Yeşil">
+  <img src="render/vademecum/on_siyah.png" width="240" alt="Siyah ve yaldız">
+  <img src="render/vademecum/kalem_konyak.png" width="240" alt="Kalem çekilmiş">
+</p>
+<p align="center">
+  <img src="render/vademecum/arka_konyak.png" width="240" alt="Arka, şövale ayağı">
+  <img src="render/vademecum/patlatma_konyak.png" width="480" alt="Patlatılmış görünüm">
+</p>
+
+Yeniden çizmek için (renkler `palet_*.json` dosyalarında):
+
+```sh
+cad run render3.py render/vademecum/dikey.glb on.png --gorunum on --ekran \
+    --palet "$(cat render/vademecum/palet_konyak.json)" --genislik 1100 --yukseklik 1400 --diyafram 16
+```
+
+GLB'ler: `dikey`, `yatay`, `kalem`, `patlatma`. Bakış: `on`, `arka`, `yan`, `ust`, `patlatma`, `detay` ya da
+`--gorunum=x,y,z` (eksi işaretli yönlerde `=` şart).

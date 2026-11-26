@@ -1,12 +1,12 @@
 """Vade Mecum stüdyo render'ı (Blender/Cycles, CPU): render2 ile aynı sahne, ekranda kitap sayfası.
 
-cad run render2.py MODEL.glb CIKTI.png --gorunum on|arka|yan|ust|patlatma|detay|"x,y,z"
+cad run render3.py MODEL.glb CIKTI.png --gorunum on|arka|yan|ust|patlatma|detay|"x,y,z"
                    --ornek 64 --palet '{"on_kasa": "#1f4d2e", ..., "seffaf": ["yakut", "pip"]}'
-                   [--ekran] [--genislik 1600 --yukseklik 1100] [--odak 1.0]
+                   [--ekran] [--genislik 1600 --yukseklik 1100] [--odak 1.0] [--diyafram 11]
 
 - Sonsuz stüdyo fonu (zemin + kavisli duvar, kameranın karşısında).
 - Palet: parça adı başına renk; "seffaf" listesindeki parçalar ışık geçiren (yakut) plastik.
-- --ekran: "ekran" parçasının üstüne saat arayüzü (10:09, tarih, kırmızı nokta) yerleştirir;
+- --ekran: "ekran" parçasının üstüne kitap sayfası (Vital Bulgular tablosu, noktalı yollar) yerleştirir;
   arayüz dünya yukarısına göre döner, dikey duruşta da düz okunur.
 """
 
@@ -34,6 +34,7 @@ ap.add_argument("--yukseklik", type=int, default=1100)
 ap.add_argument("--odak", type=float, default=1.0, help="kadraj çarpanı: küçük = yakın")
 ap.add_argument("--lens", type=float, default=85.0)
 ap.add_argument("--pozlama", type=float, default=-0.9)
+ap.add_argument("--diyafram", type=float, default=11.0, help="f sayısı: büyük = daha geniş netlik alanı")
 ap.add_argument("--donen", type=int, default=0, help="kare sayısı: model kendi ekseninde 360° döner, kareler OUT klasörüne")
 args = ap.parse_args(sys.argv[1:])
 
@@ -160,7 +161,7 @@ cam.location = c + (R / half * 0.86 * args.odak) * vdir
 cam.constraints.new("TRACK_TO").target = aim
 cam.data.dof.use_dof = True
 cam.data.dof.focus_object = aim
-cam.data.dof.aperture_fstop = 11.0
+cam.data.dof.aperture_fstop = args.diyafram
 scene.collection.objects.link(aim)
 scene.collection.objects.link(cam)
 scene.camera = cam
@@ -230,6 +231,22 @@ if args.ekran:
             ob = bpy.data.objects.new("t", cu)
             ob.data.materials.append(material("t_m", color, rough=0.7, emit=color, emit_strength=0.25))
             place(ob, du=du, dv=dv)
+            return ob
+
+        def leader(x0, x1, dv, r, step, color):
+            # Kitap tablosundaki noktalı yol: noktalar sağ kenardan ortak bir ızgarada, satırlar arasında hizalı.
+            me = bpy.data.meshes.new("l")
+            bm = bmesh.new()
+            x = x1
+            while x >= x0:
+                bmesh.ops.create_circle(bm, cap_ends=True, segments=10, radius=r,
+                                        matrix=Matrix.Translation((x, r * 1.1, 0.0)))
+                x -= step
+            bm.to_mesh(me)
+            bm.free()
+            ob = bpy.data.objects.new("l", me)
+            ob.data.materials.append(material("l_m", color, emit=color, emit_strength=0.3))
+            place(ob, dv=dv)
 
         def rule(dv, length, color="#8a6a3a", thick=0.00018):
             me = bpy.data.meshes.new("r")
@@ -248,15 +265,19 @@ if args.ekran:
         text("VADE MECUM", s * 0.050, 0.0, top, "#8a6a3a", SERIF_B, "CENTER")
         rule(top - s * 0.045, w - s * 0.18)
         text("Vital Bulgular", s * 0.095, L, top - s * 0.15, "#2b1d12", SERIF_B)
-        text("Erişkin, istirahatte", s * 0.050, L, top - s * 0.235, "#7a6650", SERIF_R)
+        text("Erişkin, istirahatte", s * 0.050, L, top - s * 0.235, "#5e4a36", SERIF_R)
         rows = [("Nabız", "60–100 /dk"), ("Tansiyon", "120/80 mmHg"), ("Solunum", "12–20 /dk"),
                 ("SpO2", "%95–100"), ("Ateş", "36,5–37,5 °C")]
         gap = (top - s * 0.33 - (-h / 2 + s * 0.2)) / (len(rows) - 0.5)
         for i, (k, v) in enumerate(rows):
             dv = top - s * 0.34 - i * gap
-            text(k, s * 0.062, L, dv, "#3a2a1c", SERIF_R)
-            text(v, s * 0.062, R_, dv, "#3a2a1c", SERIF_B, "RIGHT")
-            rule(dv - gap * 0.45, w - s * 0.18, "#d8cbb0", 0.00010)
+            a = text(k, s * 0.062, L, dv, "#2b1d12", SERIF_R)
+            b = text(v, s * 0.062, R_, dv, "#3a2a1c", SERIF_B, "RIGHT")
+            bpy.context.view_layer.update()
+            step = s * 0.026
+            x1 = R_ - b.dimensions.x - s * 0.03
+            x1 = R_ - step * math.ceil((R_ - x1) / step)         # ortak ızgara
+            leader(L + a.dimensions.x + s * 0.03, x1, dv, s * 0.0052, step, "#9c8566")
         text("— 42 —", s * 0.045, 0.0, -h / 2 + s * 0.08, "#8a6a3a", SERIF_R, "CENTER")
 
 # ------------------------------------------------------------------ dönen kayıt (model + ekran arayüzü bir pivotta döner)
