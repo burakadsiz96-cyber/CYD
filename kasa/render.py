@@ -48,6 +48,23 @@ for m in bpy.data.materials:
         p.inputs["Roughness"].default_value = 0.42
         p.inputs["Metallic"].default_value = 0.0
 
+# etiketinde "buzlu" geçen parçalar: yarı saydam buzlu plastik (rengi kendi rengi)
+for ob in bpy.data.objects:
+    if "buzlu" not in ob.name or ob.type != "MESH":
+        continue
+    src = ob.active_material
+    base = src.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value[:] if src else (0.6, 0.8, 0.8, 1)
+    fm2 = bpy.data.materials.new(ob.name + "_buzlu")
+    fm2.use_nodes = True
+    q = fm2.node_tree.nodes["Principled BSDF"]
+    q.inputs["Base Color"].default_value = base
+    q.inputs["Transmission Weight"].default_value = 0.92
+    q.inputs["Roughness"].default_value = 0.38
+    q.inputs["IOR"].default_value = 1.5
+    q.inputs["Subsurface Weight"].default_value = 0.08
+    ob.data.materials.clear()
+    ob.data.materials.append(fm2)
+
 # --- kamera
 dirs = {
     "on": Vector((-0.55, -1.0, 0.42)),
