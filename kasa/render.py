@@ -1,4 +1,4 @@
-"""Stüdyo ürün render'ı: cad run render.py MODEL.glb CIKTI.png [on|arka|yan] [ornek_sayisi]
+"""Stüdyo ürün render'ı: cad run render.py MODEL.glb CIKTI.png [on|arka|yan] [ornek_sayisi] [mat|buzlu]
 
 Model z=0 zemininde durur; kamera ve ışıklar modelin kutusuna göre kurulur.
 Ekran kartı olmayan sunucuda Cycles (CPU) + OIDN gürültü giderme kullanır.
@@ -48,9 +48,10 @@ for m in bpy.data.materials:
         p.inputs["Roughness"].default_value = 0.42
         p.inputs["Metallic"].default_value = 0.0
 
-# etiketinde "buzlu" geçen parçalar: yarı saydam buzlu plastik (rengi kendi rengi)
+# yüzey kipi (5. argüman): "buzlu" -> govde/cerceve yarı saydam buzlu plastik; "mat" -> opak
+surface = sys.argv[5] if len(sys.argv) > 5 else "mat"
 for ob in bpy.data.objects:
-    if "buzlu" not in ob.name or ob.type != "MESH":
+    if surface != "buzlu" or ob.type != "MESH" or not ob.name.startswith(("govde", "cerceve")):
         continue
     src = ob.active_material
     base = src.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value[:] if src else (0.6, 0.8, 0.8, 1)

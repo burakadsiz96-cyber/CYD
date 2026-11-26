@@ -4,7 +4,7 @@
 2 "Panel"   : çerçeve + yüzen ekran paneli, profesyonel; çizgi dokulu sırt, döner çubuk ayak.
 3 "Retro"   : organik gövde + kalın CRT çerçevesi, retro-fütür; şeffaf renkli, ayrı kaide.
 4 "Minimal" : ince çerçeve + yüzen panel; nokta dokulu sırt, köşede çapraz menteşeli üçgen kanat.
-Etiketinde "buzlu" geçen parçalar render'da yarı saydam buzlu plastik olarak çizilir.
+Render: govde/cerceve parçaları "buzlu" kipinde yarı saydam, "mat" kipinde opak çizilir.
 """
 
 import math
@@ -58,7 +58,10 @@ def c1_body():
     b = b - _rr(W + 2, H + 4, 20, 2.0, T1 - 2.0)                    # içi boş kabuk
     # anahtarlık: köşede gövdeden oyulmuş kulp (kordon geçer)
     b -= bd.Pos(W / 2 - 1, H / 2 + 1, T1 / 2) * bd.Cylinder(3.2, T1 + 2)
-    b.label, b.color = "govde_buzlu", "#7fd3c6"
+    for k in range(6):                                              # sırt dokusu: eş merkezli yivler
+        r0 = 22.5 + k * 3.0
+        b -= _cyl(r0 + 0.5, T1 - 0.6, T1 + 0.1, 0, RING_CY) - _cyl(r0 - 0.5, T1 - 1, T1 + 1, 0, RING_CY)
+    b.label, b.color = "govde", "#7fd3c6"
     return b
 
 
@@ -97,6 +100,7 @@ def c2_frame():
     # sırt dokusu: ince yatay yivler
     for i in range(-11, 12):
         f -= _box(-W / 2 + 6, W / 2 - 6, i * 2.2 - 0.45, i * 2.2 + 0.45, T2 - 0.6, T2 + 0.1)
+    f -= _rr(W - 5, H - 5, 2.5, 2.9, T2 - 1.8)                      # iç boşluk
     f -= _cyl(13.5, T2 - 1.0, T2 + 0.1)                             # tabla yuvası
     # anahtarlık: çerçeve köşesinde ince yarık
     f -= bd.Pos(-W / 2 + 4.5, H / 2 - 4.5, T2 / 2) * (bd.Rot(0, 0, 45) * bd.Box(6, 2.2, T2 + 2))
@@ -131,7 +135,7 @@ def c2_disc():
 def k2_panel():
     frame = c2_frame()
     a = _floor_gap(frame, c2_bar, 15.0)
-    parts = [frame, c2_panel(), c2_disc(), _glass(61.6, 47.6, 0.8, 0.9, 1.3)]
+    parts = [frame, c2_panel(), c2_disc(), _glass(61.6, 47.6, 0.8, 0.9, 1.3), *_ref_inside(4.0)]
     return bd.Compound(children=_stand(parts, [c2_bar(a)], 15.0), label="k2_panel")
 
 
@@ -153,7 +157,9 @@ def c3_body():
     for i in range(3):
         for j in range(5):
             b -= _cyl(0.9, -0.1, 3.5, W / 2 - 4.5 - i * 3.2, -6 + j * 3.0)
-    b.label, b.color = "govde_buzlu", "#8e6bd6"
+    for i in range(-9, 10):                                         # sırt dokusu: yatay çizgiler
+        b -= _box(-W / 2 + 10, W / 2 - 10, i * 2.4 - 0.5, i * 2.4 + 0.5, T3 - 0.6, T3 + 0.1)
+    b.label, b.color = "govde", "#8e6bd6"
     return b
 
 
@@ -210,6 +216,7 @@ def c4_frame():
         for j in range(-4, 5):
             if (i + j) % 2 == 0:
                 f -= _cyl(0.75, T4 - 0.7, T4 + 0.1, i * 4.6, j * 4.6)
+    f -= _rr(W - 4.5, H - 4.5, 4, 2.3, T4 - 1.8)                    # iç boşluk
     f -= _cyl(2.4, -1, T4 + 1, W / 2 - 6.5, H / 2 - 6.5)            # anahtarlık deliği
     f.label, f.color = "cerceve", "#d8cfc0"
     return f
@@ -239,7 +246,7 @@ def c4_flap(angle):
 def k4_minimal():
     frame = c4_frame()
     a = _floor_gap(frame, c4_flap, 14.0)
-    parts = [frame, c4_panel(), _glass(61.6, 47.6, 0.8, 1.0, 1.4)]
+    parts = [frame, c4_panel(), _glass(61.6, 47.6, 0.8, 1.0, 1.4), *_ref_inside(3.4, show_battery=False)]
     return bd.Compound(children=_stand(parts, [c4_flap(a)], 14.0), label="k4_minimal")
 
 
