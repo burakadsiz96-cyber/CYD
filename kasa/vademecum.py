@@ -36,7 +36,8 @@ HOLE_X = model.param("delik_araligi_kisa", 42.0, min=36, max=46, unit="mm")
 HOLE_Y = model.param("delik_araligi_uzun", 78.0, min=70, max=82, unit="mm")
 VIEW_DY = model.param("ekran_kaydirma", -3.3, min=-6, max=6, unit="mm")    # görüntü alanının kart ortasına göre kayması (+ USB tarafı); ölçüldü: USB kenarına 18 mm
 LCD_DY = model.param("cam_kaydirma", -1.7, min=-6, max=6, unit="mm")       # camın (70x50) kart ortasına göre kayması (+ USB tarafı); fotoğraftan
-USB_X = model.param("usb_x", 35.6, min=28, max=44, unit="mm")              # kartın USB-C'si (sırt kenarından), baş kenarda
+USB_X = model.param("usb_x", 38.8, min=30, max=46, unit="mm")              # kartın USB-C'si (kitabın sırtından); ölçüldü (iki fotoğraf): sırt tarafı montaj deliğinden 22,85 mm
+P1_X = 27.8                                # kartın P1 konnektörü (iki fotoğraf: montaj deliğinden ~11,9 mm)
 STYLUS_D = model.param("kalem_cap", 5.0, min=3.5, max=5.6, unit="mm")
 STYLUS_L = model.param("kalem_boy", 87.0, min=60, max=98, unit="mm")
 STRUT_STOP = model.param("ayak_acisi", 40.0, min=30, max=50, unit="deg")
@@ -97,7 +98,8 @@ HINGE = (18.6, 52.0)                       # ayak ve menteşe aynı yerde (dış
 U = (math.sqrt(0.5), math.sqrt(0.5))       # menteşe ekseni (sırt düzleminde)
 V = (math.sqrt(0.5), -math.sqrt(0.5))      # ayak yönü (ön kenar-kuyruk köşesine)
 STRUT_L, TAIL = 62.0, 2.5
-BARREL_R, BARREL_L = 1.8, 9.0
+BARREL_R, BARREL_L = 2.0, 9.0
+PIN_R, PIN_CLR = 0.75, 0.4                 # menteşe pimi arka kapakla tek parça; ayak etrafında döner (yerinde basılır)
 _b = math.radians(STRUT_STOP)
 TAIL_G = TAIL * math.sin(_b) + BARREL_R * math.cos(_b) - BARREL_R
 assert math.degrees(math.atan2(TAIL, BARREL_R)) > STRUT_STOP + 8
@@ -292,7 +294,7 @@ def strut_local():
         BARREL_R, BARREL_L, align=(bd.Align.CENTER, bd.Align.CENTER, bd.Align.MIN)))
     tail = _box(-BARREL_L / 2, BARREL_L / 2, 0.0, TAIL, -2 * BARREL_R, 0.0)
     s = plate + barrel + tail
-    s -= _xcyl(0.95, -BARREL_L, BARREL_L, 0.0, -BARREL_R)
+    s -= _xcyl(PIN_R + PIN_CLR, -BARREL_L, BARREL_L, 0.0, -BARREL_R)
     # süs: kenara paralel ince çizgi (dış yüz)
     groove = bd.Polygon((-w0 / 2 + 1.4, -3), (-w1 / 2 + 1.4, -STRUT_L + 4), (w1 / 2 - 1.4, -STRUT_L + 4), (w0 / 2 - 1.4, -3), align=None)
     groove = groove - bd.offset(groove, -0.5)
@@ -336,7 +338,7 @@ def back_cover():
     b = _slab(_rrf(W - SP, H, 1.2, (SP + W) / 2, H / 2), 0.0, B_T)
     b = b.fillet(0.6, b.faces().sort_by(bd.Axis.Z)[0].outer_wire().edges())
     # menteşe bloğu (iç yüzde, sayfa bloğunun boşluğuna girer)
-    block = loc * _box(-BARREL_L / 2 - 2.6, BARREL_L / 2 + 2.6, -3.2, TAIL + 2.0, -(2 * BARREL_R + TAIL_G + 1.4), -B_T + 0.01)
+    block = loc * _box(-BARREL_L / 2 - 2.6, BARREL_L / 2 + 2.6, -BARREL_R - 1.6, TAIL + 2.2, -(2 * BARREL_R + TAIL_G + 1.4), -B_T + 0.01)
     b += block
     # pil tırnakları (pil kuyruk, sırt ve ön kenar duvarlarına yaslanır; baş tarafında iki tırnak)
     x0, x1, y0, y1 = BAT
@@ -362,9 +364,8 @@ def back_cover():
         b += _latch_box(cx, cy, nx, ny, w, -0.1 - LATCH_T, -0.1, B_T - 0.01, LATCH_TOP)
         b += _latch_hook(cx, cy, nx, ny, w)
     # ayak cebi (dış yüz), menteşe silindiri ve kuyruk cebi, pim deliği, parmak oyuğu
-    cuts = [loc * bd.Pos(0, 0, 0.1) * bd.extrude(_strut_region_local(), amount=-2.1)]
-    cuts.append(loc * _box(-BARREL_L / 2 - 0.3, BARREL_L / 2 + 0.3, -BARREL_R - 0.6, TAIL + 0.6, -(2 * BARREL_R + TAIL_G), 0.1))
-    cuts.append(loc * _xcyl(0.95, -BARREL_L / 2 - 2.8, BARREL_L / 2 + 2.8, 0.0, -BARREL_R))
+    cuts = [loc * bd.Pos(0, 0, 0.1) * bd.extrude(_strut_region_local(), amount=-2.25)]      # ayakla 0.35 mm boşluk (yerinde baskı)
+    cuts.append(loc * _box(-BARREL_L / 2 - 0.3, BARREL_L / 2 + 0.3, -BARREL_R - 0.6, TAIL + 1.3, -(2 * BARREL_R + TAIL_G), 0.1))
     foot = loc * bd.Pos(0, -STRUT_L + 2.0, 0) * bd.Cylinder(5.0, 3.0)
     cuts.append(foot & _box(0, W, 0, H, -1, 1.6))
     # vidalar (havşa), köşelik ve süs yuvaları
@@ -374,6 +375,7 @@ def back_cover():
     cuts.append(_slab(engr, -0.1, 0.35))
     for c in cuts:
         b -= c
+    b += loc * _xcyl(PIN_R, -BARREL_L / 2 - 1.0, BARREL_L / 2 + 1.0, 0.0, -BARREL_R)   # menteşe pimi (kapakla tek parça)
     cover = _lab(b, "arka_kapak")
     return cover
 
@@ -483,10 +485,9 @@ def internals():
     pen = _ycyl(STYLUS_D / 2, pen_top - STYLUS_L + 3.0, pen_top, PEN_X, PEN_Z)
     pen += bd.Pos(PEN_X, pen_top - STYLUS_L + 3.0, PEN_Z) * (bd.Rot(90, 0, 0) * bd.Cone(
         STYLUS_D / 2, 0.6, 3.0, align=(bd.Align.CENTER, bd.Align.CENTER, bd.Align.MIN)))
-    pin = loc_pin()
     return [_lab(pcb, "ic_kart", "#d9b81c"), _lab(lcd, "ic_lcd", "#151515"), _lab(glass, "ekran"),
             _lab(bat, "ic_pil", "#b9c3cf"), _lab(tp, "ic_tp4056", "#1f6fd1"), _lab(sw, "ic_anahtar", "#202020"),
-            _lab(boost, "ic_yukseltici", "#1f5fc0"), _lab(pen, "kalem"), pin]
+            _lab(boost, "ic_yukseltici", "#1f5fc0"), _lab(pen, "kalem")]
 
 
 def _wire(points, r=0.8):
@@ -509,7 +510,7 @@ def wires():
     zp_tp, zp_mt = TP_Z0 + 1.6 + 0.9, B_T + 0.05 + 2.6 + 0.9
     pin_y = LY1 - SW_BODY - 4.3
     zc = 10.4                                                        # TP4056 ve MT3608'in üstünden geçiş yüksekliği
-    p1 = (KX0 + 0.3 + 13.0, KY1 - 2.5, Z_LOW - 1.0)                   # kartın P1 konnektörü (VIN/GND)
+    p1 = (P1_X, KY1 - 2.5, Z_LOW - 1.0)                                # kartın P1 konnektörü (VIN/GND)
     routes = {
         "pil_arti": [(x0 - 0.4, y1 - 3.0, 7.0), (LX0 + 2.0, y1 - 1.0, 9.5), (LX0 + 2.0, ty0 - 4.0, 9.5), (tx0 + 4.0, ty0 + 1.0, zp_tp)],
         "pil_eksi": [(x0 - 0.4, y1 - 5.0, 5.5), (LX0 + 1.0, y1 + 1.0, 8.0), (LX0 + 1.2, ty0 - 5.0, 8.0), (tx0 + 7.5, ty0 + 1.0, zp_tp)],
@@ -626,7 +627,8 @@ def p_on_kapak():
 
 @model
 def p_arka_kapak():
-    return back_cover()
+    """Arka kapak ve şövale ayağı tek baskıda: ayak cebinde, pim etrafında (yerinde basılır, sonra kırılıp serbest kalır)."""
+    return bd.Compound(children=[back_cover(), strut(0.0)], label="p_arka_kapak")
 
 
 @model
