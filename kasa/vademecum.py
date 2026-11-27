@@ -7,6 +7,8 @@
     aralıkları" havalandırma yarığıdır. Portlar başta (USB, USB-C, anahtar), microSD kuyrukta.
   * Sırt (D): yuvarlak, kabartma bantlı; içinde kalem tüneli. Tepedeki kapitalbant = kalem başlığı.
   * Kırmızı kurdele ayraç: anahtarlık.
+  * Pil hattı: TP4056 OUT → USB-C kablo → kartın USB-C girişi. Kablonun fişi baştaki pencereden çıkar (pil devre dışı,
+    güncelleme için PC kablosu aynı girişe takılır); pencere sayfa çizgili bir kapakla kapanır.
   * Arka kapak (B): çapraz şövale ayağı (fotoğraf çerçevesi gibi) kitabı dik ve yan durdurur.
 
 Kitap koordinatları (dikey kullanım): X sırttan ön kenara, Y kuyruktan başa, Z arka kapaktan ön kapağa.
@@ -39,17 +41,27 @@ SD_X = model.param("sd_x", 35.0, min=22, max=50, unit="mm")               # kuyr
 STYLUS_D = model.param("kalem_cap", 5.0, min=3.5, max=5.6, unit="mm")
 STYLUS_L = model.param("kalem_boy", 87.0, min=60, max=98, unit="mm")
 STRUT_STOP = model.param("ayak_acisi", 40.0, min=30, max=50, unit="deg")
+PLUG_L = model.param("fis_boy", 16.0, min=8, max=26, unit="mm")          # kartın USB-C girişine takılı fişin gövdesi (kart kenarından dışarı)
+CABLE_ROOM = model.param("kablo_payi", 5.0, min=3, max=14, unit="mm")    # fişin arkasında kablonun kıvrılacağı boşluk
 
 # ============================================================== kitap
-W, H, T = 66.0, 104.0, 21.8
+W, T = 66.0, 21.8
 SP = 8.5                                   # sırt genişliği
 A_T, B_T, SQ = 2.8, 3.0, 2.0               # ön/arka kapak kalınlığı, kapak payı
 ZC0, ZC1 = B_T, T - A_T                    # sayfa bloğu z: 3.0 .. 19.0
-CX0, CX1, CY0, CY1 = SP, W - SQ, SQ, H - SQ
+TAIL_WALL, HEAD_WALL = 6.7, 2.4            # kuyruk duvarı (vida, pim, microSD) ve ince baş duvarı
+PLUG_W, PLUG_H = 13.0, 7.2                 # kablolu USB-C fişin gövdesi: genişlik, yükseklik
+CX0, CX1, CY0 = SP, W - SQ, SQ
 XB = CX0 + 1.6 + CLR + PCB_W / 2           # kart merkezi
-YB = (CY0 + CY1) / 2
+KY0 = CY0 + TAIL_WALL                      # boşluğun kuyruk ucu
+YB = KY0 + CLR + PCB_H / 2
+BY1 = YB + PCB_H / 2                       # kartın baş kenarı
+PLUG_Y0 = BY1 + 0.8                        # fiş gövdesinin ön yüzü (ucu karttaki USB-C'de)
+PLUG_Y1 = PLUG_Y0 + PLUG_L                 # fiş gövdesinin arka ucu, kablonun çıktığı yer
+KY1 = PLUG_Y1 + CABLE_ROOM                 # boşluğun baş ucu: baş duvarının iç yüzü
+CY1 = KY1 + HEAD_WALL
+H = CY1 + SQ                               # kitabın boyu: fiş ve kablo payı kadar uzar
 KX0, KX1 = CX0 + 1.6, XB + PCB_W / 2 + CLR # boşluk
-KY0, KY1 = YB - PCB_H / 2 - CLR, YB + PCB_H / 2 + CLR
 Z_PCB1 = ZC1 - LCD_T                       # kart ön yüzü 15.0
 Z_PCB0 = Z_PCB1 - PCB_T                    # 13.4
 WX, WY = XB, YB + VIEW_DY                  # ekran penceresi merkezi
@@ -58,19 +70,28 @@ WIN_W, WIN_H = VIEW_W + 0.8, VIEW_H + 0.8
 BOARD_HOLES = [(XB + sx * HOLE_X / 2, YB + sy * HOLE_Y / 2) for sx in (-1, 1) for sy in (-1, 1)]
 B_SCREWS = [(12.5, CY0 + 3.35), (12.5, CY1 - 3.35), (61.0, CY1 - 3.35)]   # havşa başlı M3x10, köşeliklerin altında
 B_PIN = (58.0, CY0 + 3.35)
-A_PINS = [(22.0, CY1 - 2.6), (48.0, CY1 - 2.6), (22.0, CY0 + 2.6), (48.0, CY0 + 2.6)]
-D_PINS = [30.0, 52.0, 74.0]
+A_PINS = [(16.5, CY1 - 2.6), (58.0, CY1 - 2.6), (22.0, CY0 + 2.6), (48.0, CY0 + 2.6)]
+D_PINS = [30.0, 52.0, 74.0, round(CY1 - 20.0, 1)]
 
 # baş kenar portları
-SW_X, USBC_X, RIB_X = 20.0, 45.6, 57.5
-USBC_Z = B_T + 1.6 + 1.65                  # TP4056 arka kapağa yatık: USB-C ekseni
+SW_X, USBC_X, RIB_X = 15.9, 45.6, 58.4
+HEAD_BLOCK = 6.7                           # baş kenarda yerel kalın bloklar (anahtar, kurdele, vida, pim): eski baş duvarı kalınlığı
+BLK_Y0 = CY1 - HEAD_BLOCK
+TP_Z0 = B_T + 0.8                          # TP4056 yatağı: fiş gövdesi arka kapağa değmesin
+USBC_Z = TP_Z0 + 1.6 + 1.65                # TP4056 arka kapağa yatık: USB-C ekseni
+TP_W, TP_L = 17.2, 28.0
+TP_FRONT = KY1 - 0.8                       # TP4056 USB-C soketinin ön yüzü: fiş sokete tam oturur, gövdesi pencerede kalır
+TP = (USBC_X - TP_W / 2, USBC_X + TP_W / 2, TP_FRONT - 0.2 - TP_L, TP_FRONT - 0.2)   # TP4056 (USB-C başa bakar)
 BAT = (26.0, 60.0, 10.6, 60.6)             # 503450 LiPo (x0, x1, y0, y1); sağda boşluk duvarına yaslanır
-TP = (37.0, 54.2, 67.0, 95.0)              # TP4056 (USB-C başa bakar)
+Z_PLUG = Z_PCB0 - 1.6                      # karttaki USB-C soketinin ekseni (kartın arka yüzünde)
+WIN_PW, WIN_PH = PLUG_W + 1.4, 8.8         # fiş penceresi (baş duvarı)
+WIN_PZ0 = ZC0 + 0.6 + 0.8 * 5              # sayfa çizgileriyle hizalı: 7.6 .. 16.4
+TPW_Z1 = ZC0 + 0.6 + 0.8 * 10              # TP4056 USB-C penceresinin üstü: 11.6
 
 # sırt ve kalem
 R_SP = ((T / 2) ** 2 + SP ** 2) / (2 * SP)
 PEN_X, PEN_Z = 4.25, T / 2
-BANDS = [22.0, 41.0, 60.0, 79.0]
+BANDS = [round(H * k / 6, 1) for k in range(1, 6)]
 
 # şövale ayağı
 HINGE = (18.6, 52.0)
@@ -84,7 +105,7 @@ assert math.degrees(math.atan2(TAIL, BARREL_R)) > STRUT_STOP + 8
 
 COL = {"on_kapak": "#4a2c1d", "arka_kapak": "#4a2c1d", "sirt": "#4a2c1d", "ayak": "#4a2c1d",
        "sayfa": "#efe8d8", "baslik": "#f5c518", "arma": "#f5c518", "kose": "#f5c518",
-       "kurdele": "#c8202a", "kapitalbant": "#c8202a", "ekran": "#0b0d12", "kalem": "#f2f2ee", "pim": "#c9ccd2"}
+       "kurdele": "#c8202a", "kapitalbant": "#c8202a", "usb_kapagi": "#efe8d8", "ekran": "#0b0d12", "kalem": "#f2f2ee", "pim": "#c9ccd2"}
 
 
 # ============================================================== yardımcılar
@@ -137,7 +158,8 @@ def _frame_line(w, h, r, x, y, width=0.5):
 
 
 # ============================================================== ön kapak (A)
-TITLE_Y, CART_Y = 92.0, 12.6
+CART_Y = 12.6
+TITLE_Y = round((WY + WIN_H / 2 + 2.6 + H - 4.0) / 2, 1)          # pencere çerçevesi ile kenar süsü arasındaki bandın ortası
 
 
 def _title_plate_outline():
@@ -182,6 +204,9 @@ def page_block():
     c = _box(CX0, CX1, CY0, CY1, ZC0, ZC1)
     c = c.fillet(1.2, c.edges().filter_by(bd.Axis.Z).filter_by_position(bd.Axis.X, CX1 - 0.1, CX1 + 0.1))
     c -= _box(KX0, KX1, KY0, KY1, ZC0 - 1, ZC1 + 1)
+    # baş duvarı ince; anahtar, kurdele, vida ve pimler için yerel kalın bloklar (eski baş duvarı kalınlığında)
+    c += _box(KX0, SW_X + 5.8, BLK_Y0, KY1 + 0.01, ZC0, ZC1)
+    c += _box(RIB_X - 4.7, KX1, BLK_Y0, KY1 + 0.01, 8.2, ZC1) + _box(56.0, KX1, BLK_Y0, KY1 + 0.01, ZC0, 8.4)
     # sayfa çizgileri (ön kenar, baş, kuyruk)
     lines = []
     z = ZC0 + 0.6
@@ -196,16 +221,13 @@ def page_block():
         z += 0.8
         k += 1
     cuts = [_union(lines), *vents]
-    # baş: anahtar cebi + kol yarığı, kartın USB'si, USB-C, kurdele yuvası
-    cuts.append(_box(SW_X - 4.6, SW_X + 4.6, KY1 - 0.2, CY1 - 2.7, ZC0 + 1.0, ZC0 + 8.0))
+    # baş: anahtar cebi + kol yarığı, kartın USB-C fişi için pencere (kapaklı), TP4056 USB-C penceresi, kurdele yuvası
+    cuts.append(_box(SW_X - 4.6, SW_X + 4.6, BLK_Y0 - 0.2, CY1 - 2.7, ZC0 + 1.0, ZC0 + 8.0))
     cuts.append(_box(SW_X - 2.6, SW_X + 2.6, CY1 - 2.9, CY1 + 1, ZC0 + 3.4, ZC0 + 5.6))
-    cuts.append(_box(USB_X - 6.0, USB_X + 6.0, KY1 - 0.5, CY1 + 1, Z_PCB0 - 5.4, Z_PCB0 + 2.6))
-    usbc = _box(USBC_X - 3.1, USBC_X + 3.1, KY1 - 0.5, CY1 + 1, USBC_Z - 2.1, USBC_Z + 2.1)
-    usbc += _ycyl(2.1, KY1 - 0.5, CY1 + 1, USBC_X - 3.1, USBC_Z) + _ycyl(2.1, KY1 - 0.5, CY1 + 1, USBC_X + 3.1, USBC_Z)
-    cuts.append(usbc)
-    cuts.append(_box(USBC_X - 6.4, USBC_X + 6.4, CY1 - 1.2, CY1 + 1, ZC0 - 0.6, ZC0 + 0.6 + 8 * 0.8 + 0.4))
-    cuts.append(_box(RIB_X - 3.2, RIB_X + 3.2, KY1 - 0.5, CY1 + 1, 11.2, 13.0))
-    cuts.append(_box(RIB_X - 5.2, RIB_X + 5.2, KY1 - 0.5, KY1 + 2.4, 10.7, 13.5))
+    cuts.append(_box(USB_X - WIN_PW / 2, USB_X + WIN_PW / 2, KY1 - 0.5, CY1 + 1, WIN_PZ0, WIN_PZ0 + WIN_PH))
+    cuts.append(_box(USBC_X - 7.0, USBC_X + 7.0, KY1 - 0.5, CY1 + 1, ZC0 - 0.1, TPW_Z1))
+    cuts.append(_box(RIB_X - 2.6, RIB_X + 2.6, BLK_Y0 - 0.5, CY1 + 1, 11.2, 13.0))
+    cuts.append(_box(RIB_X - 3.9, RIB_X + 3.9, BLK_Y0 - 0.5, BLK_Y0 + 2.4, 10.7, 13.5))
     # kuyruk: microSD
     cuts.append(_box(SD_X - 7.5, SD_X + 7.5, CY0 - 1, KY0 + 0.5, Z_PCB0 - 4.4, Z_PCB0 + 1.2))
     # vida pilotları (arka kapak), pim delikleri (ön kapak, arka kapak, sırt)
@@ -301,9 +323,11 @@ def back_cover():
             b += _box(*sorted((cx, cx + sx * 1.2)), *sorted((cy + sy * 1.2, cy - sy * 6)), B_T - 0.01, B_T + 2.6)
             b += _box(*sorted((cx + sx * 1.2, cx - sx * 6)), *sorted((cy, cy + sy * 1.2)), B_T - 0.01, B_T + 2.6)
     tx0, tx1, ty0, ty1 = TP
-    b += _box(tx0 - 1.4, tx0 - 0.2, ty0, ty1, B_T - 0.01, B_T + 2.4)
-    b += _box(tx1 + 0.2, tx1 + 1.4, ty0, ty1, B_T - 0.01, B_T + 2.4)
-    b += _box(tx0, tx1, ty0 - 1.4, ty0 - 0.2, B_T - 0.01, B_T + 2.4)
+    ty1 = min(ty1, KY1 - 0.2)                                                  # yatak baş duvarına girmez
+    b += _box(tx0, tx1, ty0, ty1, B_T - 0.01, TP_Z0)
+    b += _box(tx0 - 1.4, tx0 - 0.2, ty0, ty1, B_T - 0.01, TP_Z0 + 2.4)
+    b += _box(tx1 + 0.2, tx1 + 1.4, ty0, ty1, B_T - 0.01, TP_Z0 + 2.4)
+    b += _box(tx0, tx1, ty0 - 1.4, ty0 - 0.2, B_T - 0.01, TP_Z0 + 2.4)
     b += _cyl(1.1, B_T - 0.01, B_T + 1.8, *B_PIN)
     # ayak cebi (dış yüz), menteşe silindiri ve kuyruk cebi, pim deliği, parmak oyuğu
     cuts = [loc * bd.Pos(0, 0, 0.1) * bd.extrude(_strut_region_local(), amount=-2.1)]
@@ -365,9 +389,9 @@ def corner_piece(leg):
 
 def ribbon():
     """Kurdele ayraç: iç uçta T çapası, dışta V kesik ve anahtarlık deliği. Yerel: y=0 baş yüzü."""
-    strip = _box(-3.0, 3.0, -(CY1 - KY1) - 0.2, 11.0, 0.0, 1.6)
-    strip += _box(-5.0, 5.0, -(CY1 - KY1) - 0.2, -(CY1 - KY1) + 2.0, 0.0, 2.2)
-    strip -= bd.Pos(0, 11.0, -1) * bd.extrude(bd.Polygon((-3.5, 0.01), (0, -2.6), (3.5, 0.01), align=None), amount=4)
+    strip = _box(-2.5, 2.5, -HEAD_BLOCK - 0.2, 11.0, 0.0, 1.6)
+    strip += _box(-3.7, 3.7, -HEAD_BLOCK - 0.2, -HEAD_BLOCK + 2.0, 0.0, 2.2)
+    strip -= bd.Pos(0, 11.0, -1) * bd.extrude(bd.Polygon((-2.6, 0.01), (0, -2.6), (2.6, 0.01), align=None), amount=4)
     strip -= _cyl(1.6, -1, 3, 0.0, 6.0)
     return strip
 
@@ -381,6 +405,25 @@ def headband_cap():
     return cap
 
 
+def usb_cover_local():
+    """Baş kenardaki fiş penceresinin kapağı. Yerel: dış yüz z=0 (sayfa çizgili), gövde -z'ye, x genişlik, y yukarı (dünyada -z)."""
+    w, h = WIN_PW - 0.2, WIN_PH - 0.2
+    t = HEAD_WALL + 0.6
+    body = _slab(_rrf(w, h, 0.8), -t, 0.0)
+    zc = WIN_PZ0 + WIN_PH / 2
+    for k in range(0, 12):                                                         # sayfa bloğundakiyle aynı çizgiler
+        zl = ZC0 + 0.6 + 0.8 * k
+        if WIN_PZ0 + 0.15 < zl and zl + 0.4 < WIN_PZ0 + WIN_PH - 0.15:
+            body -= _box(-w / 2 - 1, w / 2 + 1, -(zl + 0.4 - zc), -(zl - zc), -0.35, 0.1)
+    body -= bd.Pos(0, 0, 0) * bd.Sphere(1.8)                                       # parmak ucu çukuru
+    return body
+
+
+def usb_cover():
+    return _lab(bd.Location(bd.Plane(origin=(USB_X, CY1, WIN_PZ0 + WIN_PH / 2), x_dir=(1, 0, 0), z_dir=(0, 1, 0))) * usb_cover_local(),
+                "usb_kapagi")
+
+
 def small_parts():
     out = [_lab(bd.Pos(0, 0, T - 0.6) * title_plate(), "baslik"), _lab(bd.Pos(0, 0, T - 0.6) * cartouche(), "arma")]
     for i, (cx, cy, sx, sy) in enumerate(FRONT_CORNERS):
@@ -390,6 +433,7 @@ def small_parts():
         piece = bd.Pos(cx, cy, 0.6) * (bd.Rot(180, 0, 0) * _corner_place(corner_piece(15.2), sx, -sy))
         out.append(_lab(piece, f"kose{i + 2}"))
     out.append(_lab(bd.Pos(RIB_X, CY1, 11.25) * ribbon(), "kurdele"))
+    out.append(usb_cover())
     out.append(_lab(bd.Pos(PEN_X, H - 2.0, PEN_Z) * (bd.Rot(-90, 0, 0) * headband_cap()), "kapitalbant"))
     return out
 
@@ -412,15 +456,17 @@ def internals():
     x0, x1, y0, y1 = BAT
     bat = _box(x0, x1, y0, y1, B_T + 0.2, B_T + 5.2)
     tx0, tx1, ty0, ty1 = TP
-    tp = _box(tx0, tx1, ty0, ty1, B_T, B_T + 1.6) + _box(USBC_X - 4.5, USBC_X + 4.5, ty1 - 7.4, ty1 + 0.2, B_T + 1.6, B_T + 4.9)
-    sw = _box(SW_X - 4.3, SW_X + 4.3, KY1, KY1 + 3.6, ZC0 + 2.5, ZC0 + 6.0)
+    tp = _box(tx0, tx1, ty0, ty1, TP_Z0, TP_Z0 + 1.6) + _box(USBC_X - 4.5, USBC_X + 4.5, ty1 - 7.4, ty1 + 0.2, TP_Z0 + 1.6, TP_Z0 + 4.9)
+    sw = _box(SW_X - 4.3, SW_X + 4.3, BLK_Y0, BLK_Y0 + 3.6, ZC0 + 2.5, ZC0 + 6.0)
+    fis = _box(USB_X - PLUG_W / 2, USB_X + PLUG_W / 2, PLUG_Y0, PLUG_Y1, Z_PLUG - PLUG_H / 2, Z_PLUG + PLUG_H / 2)
+    kablo = _ycyl(1.8, PLUG_Y1, PLUG_Y1 + CABLE_ROOM - 0.8, USB_X, Z_PLUG)
     pen = _ycyl(STYLUS_D / 2, H + 1.2 - STYLUS_L + 3.0, H + 1.2, PEN_X, PEN_Z)
     pen += bd.Pos(PEN_X, H + 1.2 - STYLUS_L + 3.0, PEN_Z) * (bd.Rot(90, 0, 0) * bd.Cone(
         STYLUS_D / 2, 0.6, 3.0, align=(bd.Align.CENTER, bd.Align.CENTER, bd.Align.MIN)))
     pin = loc_pin()
     return [_lab(pcb, "ic_kart", "#d9b81c"), _lab(lcd, "ic_lcd", "#151515"), _lab(glass, "ekran"),
             _lab(bat, "ic_pil", "#b9c3cf"), _lab(tp, "ic_tp4056", "#1f6fd1"), _lab(sw, "ic_anahtar", "#202020"),
-            _lab(pen, "kalem"), pin]
+            _lab(fis, "ic_fis", "#2a2a2e"), _lab(kablo, "ic_kablo", "#2a2a2e"), _lab(pen, "kalem"), pin]
 
 
 def loc_pin():
@@ -500,13 +546,20 @@ def vm_kalem():
 @model
 def vm_patlatma():
     off = {"on_kapak": 16, "baslik": 22, "arma": 22, "kose0": 22, "kose1": 22, "ekran": 8, "ic_lcd": 8, "ic_kart": 4,
-           "sayfa": 0, "ic_pil": -8, "ic_tp4056": -8, "ic_anahtar": 0, "arka_kapak": -16, "ayak": -24, "pim": -24,
+           "sayfa": 0, "ic_pil": -8, "ic_tp4056": -8, "ic_fis": -8, "ic_kablo": -8, "ic_anahtar": 0, "arka_kapak": -16, "ayak": -24, "pim": -24,
            "kose2": -22, "kose3": -22, "kose4": -22}
     dx = {"sirt": -14, "kalem": -14, "kapitalbant": -14}
-    dy = {"kurdele": 10, "kapitalbant": 10}
+    dy = {"kurdele": 10, "kapitalbant": 10, "usb_kapagi": 14}
     parts = [_lab(bd.Pos(dx.get(p.label, 0), dy.get(p.label, 0), off.get(p.label, 0)) * p, p.label, p.color) for p in book()]
     z0 = min(q.bounding_box().min.Z for q in parts)
     return bd.Compound(children=[_lab(bd.Pos(0, 0, -z0) * q, q.label, q.color) for q in parts], label="vm_patlatma")
+
+
+@model
+def vm_ic():
+    """İç düzen görünümü: ön kapak, ekran ve kart yok; pil hattı, fiş, kablo payı, TP4056 ve anahtar görünür."""
+    keep = ("arka_kapak", "sayfa", "ic_pil", "ic_tp4056", "ic_anahtar", "ic_fis", "ic_kablo", "usb_kapagi", "kurdele", "pim", "ayak")
+    return bd.Compound(children=[q for q in book() if q.label in keep], label="vm_ic")
 
 
 def _flip(shape, top):
@@ -564,11 +617,17 @@ def p_kurdele():
 
 
 @model
+def p_usb_kapagi():
+    # kenar üstü basılır: sayfa çizgileri katman çizgileriyle aynı yönde, ince çıkıntılar yatay kalır
+    return _lab(bd.Pos(0, 0, (WIN_PH - 0.2) / 2) * (bd.Rot(90, 0, 0) * usb_cover_local()), "usb_kapagi")
+
+
+@model
 def p_kapitalbant():
     return _lab(bd.Pos(0, 0, 5.0) * (bd.Rot(180, 0, 0) * headband_cap()), "kapitalbant")
 
 
 if __name__ == "__main__":
-    for m in (vademecum, vm_dikey, vm_yatay, vm_kalem, vm_patlatma, p_on_kapak, p_arka_kapak, p_sayfa, p_sirt, p_ayak,
-              p_baslik, p_arma, p_kose_on, p_kose_arka, p_kurdele, p_kapitalbant):
+    for m in (vademecum, vm_dikey, vm_yatay, vm_kalem, vm_patlatma, vm_ic, p_on_kapak, p_arka_kapak, p_sayfa, p_sirt, p_ayak,
+              p_baslik, p_arma, p_kose_on, p_kose_arka, p_kurdele, p_usb_kapagi, p_kapitalbant):
         m()
