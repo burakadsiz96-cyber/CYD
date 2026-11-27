@@ -34,7 +34,8 @@ BACK_PARTS = CARD_T - LCD_T - PCB_T        # 5.4: microSD yuvası, konnektörler
 CLR = 0.3
 HOLE_X = model.param("delik_araligi_kisa", 42.0, min=36, max=46, unit="mm")
 HOLE_Y = model.param("delik_araligi_uzun", 78.0, min=70, max=82, unit="mm")
-VIEW_DY = model.param("ekran_kaydirma", 0.0, min=-5, max=5, unit="mm")     # LCD'nin uzun eksende kayması
+VIEW_DY = model.param("ekran_kaydirma", -3.3, min=-6, max=6, unit="mm")    # görüntü alanının kart ortasına göre kayması (+ USB tarafı); ölçüldü: USB kenarına 18 mm
+LCD_DY = model.param("cam_kaydirma", -1.7, min=-6, max=6, unit="mm")       # camın (70x50) kart ortasına göre kayması (+ USB tarafı); fotoğraftan
 USB_X = model.param("usb_x", 35.6, min=28, max=44, unit="mm")              # kartın USB-C'si (sırt kenarından), baş kenarda
 STYLUS_D = model.param("kalem_cap", 5.0, min=3.5, max=5.6, unit="mm")
 STYLUS_L = model.param("kalem_boy", 87.0, min=60, max=98, unit="mm")
@@ -150,7 +151,9 @@ def _frame_line(w, h, r, x, y, width=0.5):
 
 
 # ============================================================== ön kapak (A)
-TITLE_Y, CART_Y = 95.0, 13.6
+_FRAME_HALF = (VIEW_H + 0.8 + 5.2) / 2 + 0.25
+TITLE_Y = round((YB + VIEW_DY + _FRAME_HALF + H - 4.0) / 2, 1)        # pencere çerçevesi ile kenar süsü arasının ortası
+CART_Y = round((YB + VIEW_DY - _FRAME_HALF + 4.0) / 2, 1)
 
 
 def _title_plate_outline():
@@ -158,7 +161,7 @@ def _title_plate_outline():
 
 
 def _cartouche_outline(grow=0.0):
-    return bd.Pos(WX, CART_Y) * bd.Ellipse(10.0 + grow, 5.9 + grow)
+    return bd.Pos(WX, CART_Y) * bd.Ellipse(9.0 + grow, 5.3 + grow)
 
 
 FRONT_CORNERS = [(W, 0.0, -1, 1), (W, H, -1, -1)]
@@ -178,7 +181,8 @@ def front_cover():
     for cx, cy, sx, sy in FRONT_CORNERS:
         recess += _tri(cx, cy, sx, sy, 11.2)
     cuts = [win, _slab(engr, T - 0.35, T + 0.1), _slab(recess, T - 0.6, T + 0.1)]
-    adds = [_cyl(2.75, Z_PCB1, ZC1 + 0.01, x, y) for x, y in BOARD_HOLES]           # kart ayakları
+    lcd_clear = _box(XB - LCD_W / 2 - 0.3, XB + LCD_W / 2 + 0.3, YB + LCD_DY - LCD_H / 2 - 0.2, YB + LCD_DY + LCD_H / 2 + 0.2, Z_PCB1 - 1, ZC1 + 1)
+    adds = [_cyl(2.75, Z_PCB1, ZC1 + 0.01, x, y) - lcd_clear for x, y in BOARD_HOLES]   # kart ayakları (cama bakan yüzü düz)
     adds += [_cyl(1.1, ZC1 - 1.8, ZC1 + 0.01, x, y) for x, y in A_PINS]            # sayfa bloğu pimleri
     for s in adds:
         a += s
@@ -374,9 +378,9 @@ def _rod_of_asclepius(cx, cy, s=1.0):
 
 def cartouche():
     p = _slab(_cartouche_outline(), 0.0, 0.6)
-    rim = _cartouche_outline() - (bd.Pos(WX, CART_Y) * bd.Ellipse(9.0, 4.9))
+    rim = _cartouche_outline() - (bd.Pos(WX, CART_Y) * bd.Ellipse(8.0, 4.3))
     p += _slab(rim, 0.59, 1.1)
-    p += _slab(_rod_of_asclepius(WX, CART_Y, 0.9), 0.59, 1.1)
+    p += _slab(_rod_of_asclepius(WX, CART_Y, 0.82), 0.59, 1.1)
     return p
 
 
@@ -433,7 +437,7 @@ def internals():
     pcb = _box(XB - PCB_W / 2, XB + PCB_W / 2, YB - PCB_H / 2, YB + PCB_H / 2, Z_PCB0, Z_PCB1)
     for x, y in BOARD_HOLES:
         pcb -= _cyl(1.6, Z_PCB0 - 0.1, Z_PCB1 + 0.1, x, y)
-    lcd = _box(XB - LCD_W / 2, XB + LCD_W / 2, YB - LCD_H / 2 + VIEW_DY, YB + LCD_H / 2 + VIEW_DY, Z_PCB1, ZC1 - 0.03)
+    lcd = _box(XB - LCD_W / 2, XB + LCD_W / 2, YB - LCD_H / 2 + LCD_DY, YB + LCD_H / 2 + LCD_DY, Z_PCB1, ZC1 - 0.03)
     glass = _box(WX - VIEW_W / 2, WX + VIEW_W / 2, WY - VIEW_H / 2, WY + VIEW_H / 2, ZC1 - 0.03, ZC1 - 0.01)
     x0, x1, y0, y1 = BAT
     bat = _box(x0, x1, y0, y1, B_T + 0.2, B_T + 0.2 + BAT_T)

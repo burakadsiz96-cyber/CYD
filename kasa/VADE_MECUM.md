@@ -110,7 +110,8 @@ kullan.
 | Parametre | Varsayılan | Ne |
 |---|---|---|
 | `delik_araligi_kisa/uzun` | 42 × 78 mm | Kart montaj delikleri |
-| `ekran_kaydirma` | 0 | LCD'nin kartın uzun ekseninde kayması |
+| `ekran_kaydirma` | −3,3 mm | Görüntü alanının kart ortasına göre kayması (ölçüldü: USB kenarına 18 mm); pencere buna göre |
+| `cam_kaydirma` | −1,7 mm | Camın (70×50) kart ortasına göre kayması; kart ayakları cama göre düz kesilir |
 | `usb_x` | 35,6 mm | Kartın USB-C'sinin kitabın sırt kenarına uzaklığı (baş delik buna göre) |
 | `kalem_cap` / `kalem_boy` | 5 / 87 mm | Kalemini ölç (tünel 98 mm'ye kadar alır) |
 | `ayak_acisi` | 40° | Ayak durdurağı; büyütürsen kitap daha çok yaslanır |
