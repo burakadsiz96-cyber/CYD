@@ -4,7 +4,7 @@
   * Ön kapak (A): ekran, varak çerçeveli bir levha gibi kapakta; üstte yaldız başlık plakası,
     altta Asklepios asalı arma, ön kenar köşelerinde pirinç köşelikler.
   * Sayfa bloğu (C): krem; baş, kuyruk ve ön kenarda sayfa çizgileri. Ön kenardaki bazı "sayfa
-    aralıkları" havalandırma yarığıdır. Portlar başta (USB, USB-C, anahtar), microSD kuyrukta.
+    aralıkları" havalandırma yarığıdır. Portlar başta (USB-C, şarj, anahtar).
   * Sırt (D): yuvarlak, kabartma bantlı; içinde kalem tüneli. Tepedeki kapitalbant = kalem başlığı.
   * Kırmızı kurdele ayraç: anahtarlık.
   * Arka kapak (B): çapraz şövale ayağı (fotoğraf çerçevesi gibi) kitabı dik ve yan durdurur.
@@ -36,7 +36,6 @@ HOLE_X = model.param("delik_araligi_kisa", 42.0, min=36, max=46, unit="mm")
 HOLE_Y = model.param("delik_araligi_uzun", 78.0, min=70, max=82, unit="mm")
 VIEW_DY = model.param("ekran_kaydirma", 0.0, min=-5, max=5, unit="mm")     # LCD'nin uzun eksende kayması
 USB_X = model.param("usb_x", 35.6, min=28, max=44, unit="mm")              # kartın USB-C'si (sırt kenarından), baş kenarda
-SD_Y = model.param("sd_y", 61.3, min=40, max=80, unit="mm")               # microSD (kuyruktan), ön kenarda
 STYLUS_D = model.param("kalem_cap", 5.0, min=3.5, max=5.6, unit="mm")
 STYLUS_L = model.param("kalem_boy", 87.0, min=60, max=98, unit="mm")
 STRUT_STOP = model.param("ayak_acisi", 40.0, min=30, max=50, unit="deg")
@@ -223,10 +222,6 @@ def page_block():
     cuts.append(_box(USB_X - 6.75, USB_X + 6.75, KY1 - 0.5, CY1 + 1, Z_PCB0 - 5.6, Z_PCB0 + 2.4))
     cuts.append(_box(RIB_X - 3.2, RIB_X + 3.2, KY1 - 0.5, CY1 + 1, RIB_Z - 0.05, RIB_Z + 1.75))
     cuts.append(_box(RIB_X - 5.2, RIB_X + 5.2, KY1 - 0.5, KY1 + 2.4, RIB_Z - 0.5, RIB_Z + 2.3))
-    # ön kenar: microSD yarığı ve tırnak oyuğu (sayfa çizgileriyle hizalı)
-    sz0, sz1 = ZC0 + 0.6 + 0.8 * 14, ZC0 + 0.6 + 0.8 * 18                        # 14.8 .. 18.0
-    cuts.append(_box(KX1 - 0.5, CX1 + 1, SD_Y - 7.5, SD_Y + 7.5, sz0, sz1))
-    cuts.append(_box(CX1 - 1.6, CX1 + 1, SD_Y - 9.5, SD_Y + 9.5, sz0 - 0.8, sz1 + 0.8))
     # vida pilotları (arka kapak), pim delikleri (ön kapak, sırt)
     cuts += [_cyl(1.25, ZC0 - 0.1, ZC0 + 7.5, x, y) for x, y in B_SCREWS]
     cuts += [_cyl(1.2, ZC1 - 2.0, ZC1 + 0.1, x, y) for x, y in A_PINS]

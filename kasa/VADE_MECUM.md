@@ -14,7 +14,7 @@ küçük bir kitaba dönüştürüyor. Tıp okuyan, old money tarzını seven bi
 | Kitap parçası | İşlevi |
 |---|---|
 | Ön kapak | Ekran, varak çerçeveli bir levha gibi kapakta duruyor. Üstte yaldız başlık levhası, altta Asklepios asalı arma, ön kenar köşelerinde pirinç köşelikler var |
-| Sayfa bloğu | Kartı, pili ve şarj devresini taşıyor. Baş, kuyruk ve ön kenarda krem sayfa çizgileri; ön kenardaki bazı "sayfa aralıkları" havalandırma yarığı. Ön kenarda microSD yarığı, başta kartın USB-C'si, şarj girişi, anahtar ve kurdele |
+| Sayfa bloğu | Kartı, pili ve şarj devresini taşıyor. Baş, kuyruk ve ön kenarda krem sayfa çizgileri; ön kenardaki bazı "sayfa aralıkları" havalandırma yarığı. Başta kartın USB-C'si, şarj girişi, anahtar ve kurdele |
 | Yuvarlak sırt | Kabartma bantları var, içinde kalem tüneli. Tepedeki kırmızı kapitalbant kalemin başlığı: yuvasına tık diye oturur (tırnak), çekince kalem çıkar, baş aşağıda düşmez |
 | Kırmızı kurdele ayraç | Anahtarlık deliği |
 | Arka kapak | Fotoğraf çerçevelerindeki gibi tek bir çapraz şövale ayağı |
@@ -94,7 +94,7 @@ kullan.
 2. Ön kapağı sayfa bloğunun önüne oturt (4 pim) ve yapıştır.
 3. Kurdeleyi sayfa bloğunun içinden baştaki yarığa geçir; T ucu içeride kalır.
 4. Sırtı sayfa bloğunun sol yüzüne oturt (3 pim) ve yapıştır.
-5. CYD'yi ekranı ön kapağa bakacak şekilde 4 ayağa koy, 4× M3×6 ile vidala. microSD yuvası ön kenardaki yarığa bakar.
+5. CYD'yi ekranı ön kapağa bakacak şekilde 4 ayağa koy, 4× M3×6 ile vidala.
 6. Arka kapakta:
    - ayağı cebine yerleştir, filament pimi menteşe bloğundan geçir;
    - pili tırnakların arasına bantla;
@@ -112,7 +112,6 @@ kullan.
 | `delik_araligi_kisa/uzun` | 42 × 78 mm | Kart montaj delikleri |
 | `ekran_kaydirma` | 0 | LCD'nin kartın uzun ekseninde kayması |
 | `usb_x` | 35,6 mm | Kartın USB-C'sinin kitabın sırt kenarına uzaklığı (baş delik buna göre) |
-| `sd_y` | 61,3 mm | microSD yuvasının kuyruğa uzaklığı (ön kenardaki yarık buna göre) |
 | `kalem_cap` / `kalem_boy` | 5 / 87 mm | Kalemini ölç (tünel 98 mm'ye kadar alır) |
 | `ayak_acisi` | 40° | Ayak durdurağı; büyütürsen kitap daha çok yaslanır |
 
@@ -130,7 +129,7 @@ Değiştirip `cad run vademecum.py` çalıştır, sonra çıktıları yeniden d�
 | `arka_konyak.png`, `arka_siyah.png` | Arka kapak ve açık şövale ayağı |
 | `patlatma_konyak.png` | Bütün parçalar ayrık |
 | `ic_konyak.png` | İç düzen ve kablolar (üstten, ön kapak ve kart kaldırılmış) |
-| `bas_konyak.png`, `kenar_konyak.png` | Baş kenardaki delikler; ön kenardaki microSD yarığı |
+| `bas_konyak.png`, `kenar_konyak.png` | Baş kenardaki delikler; ön kenar |
 | `ic_konyak.png` | İç düzen (üstten, ön kapak ve kart yok): pil, MT3608, TP4056, anahtar |
 
 <p align="center">
