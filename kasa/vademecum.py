@@ -77,7 +77,8 @@ TP_FRONT = CY1 - 1.2 - 0.5                 # soket ön yüzü: fiş dıştaki ce
 TP = (USBC_X - TP_W / 2, USBC_X + TP_W / 2, TP_FRONT - TP_OVER - TP_L, TP_FRONT - TP_OVER)
 SW_L, SW_W, SW_BODY, SW_LEVER = 11.5, 6.0, 5.5, 4.5    # anahtar: gövde boyu (sürgü yönü), eni, derinliği, kolu
 SW_X, SW_Z = 38.35, ZC0 + 1.0 + SW_W / 2   # anahtarın merkezi (başın ortası, kartın USB-C'sinin altında)
-RIB_X, RIB_Z = 60.0, ZC0 + 0.6 + 0.8 * 13  # kurdele (z 14.0)
+RIB_X, RIB_Z = 58.5, ZC0 + 0.6 + 0.8 * 13  # kurdele (z 14.0)
+RIB_W, RIB_OUT, RIB_T = 8.0, 17.0, 1.6     # kurdele eni, baştan dışarı uzunluğu, kalınlığı
 
 # sırt ve kalem
 R_SP = ((T / 2) ** 2 + SP ** 2) / (2 * SP)
@@ -220,8 +221,8 @@ def page_block():
     cuts.append(_box(USBC_X - 6.4, USBC_X + 6.4, CY1 - 1.2, CY1 + 1, ZC0 - 0.6, ZC0 + 0.6 + 8 * 0.8 + 0.4 + 0.8))
     cuts.append(_box(SW_X - 3.6, SW_X + 3.6, LY1 - 0.5, CY1 + 1, SW_Z - 1.4, SW_Z + 1.4))
     cuts.append(_box(USB_X - 6.75, USB_X + 6.75, KY1 - 0.5, CY1 + 1, Z_PCB0 - 5.6, Z_PCB0 + 2.4))
-    cuts.append(_box(RIB_X - 3.2, RIB_X + 3.2, KY1 - 0.5, CY1 + 1, RIB_Z - 0.05, RIB_Z + 1.75))
-    cuts.append(_box(RIB_X - 5.2, RIB_X + 5.2, KY1 - 0.5, KY1 + 2.4, RIB_Z - 0.5, RIB_Z + 2.3))
+    cuts.append(_box(RIB_X - RIB_W / 2 - 0.2, RIB_X + RIB_W / 2 + 0.2, KY1 - 0.5, CY1 + 1, RIB_Z - 0.05, RIB_Z + RIB_T + 0.15))
+    cuts.append(_box(RIB_X - RIB_W / 2 - 2.2, RIB_X + RIB_W / 2 + 2.2, KY1 - 0.5, KY1 + 2.4, RIB_Z - 0.5, RIB_Z + 2.3))
     # vida pilotları (arka kapak), pim delikleri (ön kapak, sırt)
     cuts += [_cyl(1.25, ZC0 - 0.1, ZC0 + 7.5, x, y) for x, y in B_SCREWS]
     cuts += [_cyl(1.2, ZC1 - 2.0, ZC1 + 0.1, x, y) for x, y in A_PINS]
@@ -387,10 +388,11 @@ def corner_piece(leg):
 
 def ribbon():
     """Kurdele ayraç: iç uçta T çapası, dışta V kesik ve anahtarlık deliği. Yerel: y=0 baş yüzü."""
-    strip = _box(-3.0, 3.0, -(CY1 - KY1) - 0.2, 11.0, 0.0, 1.6)
-    strip += _box(-5.0, 5.0, -(CY1 - KY1) - 0.2, -(CY1 - KY1) + 2.0, 0.0, 2.2)
-    strip -= bd.Pos(0, 11.0, -1) * bd.extrude(bd.Polygon((-3.5, 0.01), (0, -2.6), (3.5, 0.01), align=None), amount=4)
-    strip -= _cyl(1.6, -1, 3, 0.0, 6.0)
+    hw = RIB_W / 2
+    strip = _box(-hw, hw, -(CY1 - KY1) - 0.2, RIB_OUT, 0.0, RIB_T)
+    strip += _box(-hw - 2.0, hw + 2.0, -(CY1 - KY1) - 0.2, -(CY1 - KY1) + 2.0, 0.0, 2.2)
+    strip -= bd.Pos(0, RIB_OUT, -1) * bd.extrude(bd.Polygon((-hw - 0.5, 0.01), (0, -3.4), (hw + 0.5, 0.01), align=None), amount=4)
+    strip -= _cyl(2.0, -1, 3, 0.0, RIB_OUT - 8.0)
     return strip
 
 
