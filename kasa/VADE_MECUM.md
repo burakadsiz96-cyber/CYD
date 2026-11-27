@@ -122,5 +122,8 @@ cad run render3.py render/vademecum/dikey.glb on.png --gorunum on --ekran \
     --palet "$(cat render/vademecum/palet_konyak.json)" --genislik 1100 --yukseklik 1400 --diyafram 16
 ```
 
+**Montaj videosu:** `montaj.mp4` (35 sn): kitap parçalarına ayrılır, her parça altyazıyla yerine girer.
+Kareleri `render4.py` çizer (`montaj.glb` üzerinden), altyazıyı ve MP4'ü `montaj_video.py` yapar.
+
 GLB'ler: `dikey`, `yatay`, `kalem`, `patlatma`. Bakış: `on`, `arka`, `yan`, `ust`, `patlatma`, `detay` ya da
 `--gorunum=x,y,z` (eksi işaretli yönlerde `=` şart).
