@@ -54,8 +54,8 @@ Bu kontroller genel tasarım kuralları; önce küçük parçalarla yazıcının
 
 ## Donanım
 
-- 2× M3×10 havşa başlı (arka kapak, çapraz iki köşe; başları pirinç köşeliklerin altında kalır)
-- 4× M3×6 (kartı ön kapağın ayaklarına bağlar)
+- Vida yok. Kart, ön kapağın pimlerine ısıl perçinle tutturulur; arka kapak 4 esnek tırnakla oturur
+- Yapıştırıcı (süsler, ön kapak, sırt, kalem başlığı, arka köşelikler) ve çift taraflı bant (pil, TP4056, MT3608)
 - ~14 mm 1,75 mm filament parçası (ayak menteşe pimi)
 - LiPo 51×36×8 mm
 - TP4056 USB-C şarj modülü, korumalı (HW-373, 31×19×5 mm)
@@ -74,7 +74,7 @@ Bu kontroller genel tasarım kuralları; önce küçük parçalarla yazıcının
 | TP4056 | Başta sırt tarafında, USB-C'si baştaki şarj deliğine oturur |
 | Anahtar | Başın ortasında, kolu baş kenardan çıkar; arka kapaktaki beşikte durur |
 
-Kablolama (fotoğraftaki devre):
+Kablolama (fotoğraftaki devre; çizim: `render/vademecum/kablolama.png`):
 
 1. Pil → TP4056 B+/B−
 2. TP4056 OUT+ → anahtar → MT3608 VIN+
@@ -94,7 +94,9 @@ kullan.
 2. Ön kapağı sayfa bloğunun önüne oturt (4 pim) ve yapıştır.
 3. Kurdeleyi sayfa bloğunun içinden baştaki yarığa geçir; T ucu içeride kalır.
 4. Sırtı sayfa bloğunun sol yüzüne oturt (3 pim) ve yapıştır.
-5. CYD'yi ekranı ön kapağa bakacak şekilde 4 ayağa koy, 4× M3×6 ile vidala.
+5. CYD'yi ekranı ön kapağa bakacak şekilde, kartın 4 deliği ön kapağın 4 pimine geçecek şekilde oturt. Pimlerin
+   kartın arkasından çıkan 1,6 mm'lik uçlarını sıcak havya ucuyla 2–3 saniye bastırıp yassılat (ısıl perçin).
+   Havyayı kartın bakır yollarına değdirme.
 6. Arka kapakta:
    - ayağı cebine yerleştir, filament pimi menteşe bloğundan geçir;
    - pili tırnakların arasına bantla;
@@ -102,7 +104,8 @@ kullan.
    - MT3608'i yan tırnaklarının arasına bantla;
    - anahtarı beşiğine, kolu baştaki yarıktan çıkacak şekilde yerleştir.
    Kabloları yukarıdaki sırayla lehimle, P1 kablosunu karta tak.
-7. Arka kapağı kapat. 2× M3×10 havşa başlıyı tak, 3 arka köşeliği bastır.
+7. Arka kapağı kapat: tırnaklar tık diye oturur. 3 arka köşeliği yapıştır. Açmak için arka kapağı kitabın
+   kenarındaki 2 mm'lik paydan tırnakla kaldır; tırnaklar esneyip bırakır.
 8. Kapitalbandı kalemin arka ucuna yapıştır, kalemi sırtın tepesinden tünele it; başlık tık diye oturur.
 
 ## Ölç ve düzelt (parametreler, `vademecum.py`'nin başında)

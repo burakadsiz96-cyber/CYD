@@ -59,7 +59,13 @@ WX, WY = XB, YB + VIEW_DY                  # ekran penceresi merkezi
 WIN_W, WIN_H = VIEW_W + 0.8, VIEW_H + 0.8
 
 BOARD_HOLES = [(XB + sx * HOLE_X / 2, YB + sy * HOLE_Y / 2) for sx in (-1, 1) for sy in (-1, 1)]
-B_SCREWS = [(12.25, 8.0), (63.3, CY1 - 3.35)]   # havşa başlı M3x10, köşeliklerin altında (çapraz iki köşe)
+# arka kapak vidasız: dört esnek tırnak (merkez, duvar normali, en); kanca sayfa bloğundaki cebe oturur
+LATCHES = [((54.0, LY1), (0, 1), 8.0),          # baş
+           ((12.25, LY0), (0, -1), 3.6),        # kuyruk, sırt köşesi
+           ((LX0, 25.0), (-1, 0), 6.0),         # sırt tarafı, pilin yanı
+           ((63.9, 64.0), (1, 0), 8.0)]         # ön kenar tarafı (iç kaburgaya)
+LATCH_T, LATCH_TOP, HOOK = 1.0, 10.0, 0.5
+PEG_R, PEG_OUT = 1.45, 1.6                      # kart pimleri: Ø2.9, kartın arkasından 1.6 mm çıkar (ısıl perçin)
 A_PINS = [(22.0, CY1 - 2.6), (48.0, CY1 - 2.6), (22.0, CY0 + 2.6), (48.0, CY0 + 2.6)]
 D_PINS = [31.0, 53.5, 76.0]
 
@@ -186,7 +192,8 @@ def front_cover():
     adds += [_cyl(1.1, ZC1 - 1.8, ZC1 + 0.01, x, y) for x, y in A_PINS]            # sayfa bloğu pimleri
     for s in adds:
         a += s
-    cuts += [_cyl(1.25, Z_PCB1 - 0.1, ZC1 + 1.6, x, y) for x, y in BOARD_HOLES]
+    for x, y in BOARD_HOLES:                                                        # kart pimleri (ısıl perçin)
+        a += _cyl(PEG_R, Z_PCB0 - PEG_OUT, Z_PCB1 + 0.01, x, y)
     for c in cuts:
         a -= c
     cover = _lab(a, "on_kapak")
@@ -201,8 +208,7 @@ def page_block():
     c -= _box(LX0, LX1, LY0, LY1, ZC0 - 1, Z_LOW)                                  # kartın altı: pil, TP4056, MT3608, anahtar
     c -= _box(KX0, KX1, KY0, KY1, Z_LOW - 0.01, ZC1 + 1)                           # kart
     # vida ayakları (kartın altındaki boşlukta, sayfa bloğuna bağlı)
-    c += _box(LX0 - 0.01, B_SCREWS[0][0] + 2.05, B_SCREWS[0][1] - 2.2, B_SCREWS[0][1] + 2.2, ZC0, Z_LOW + 0.01)
-    c += _box(61.0, LX1 + 0.01, B_SCREWS[1][1] - 2.4, LY1 + 0.01, ZC0, Z_LOW + 0.01)
+    c += _box(63.9, LX1 + 0.01, 56.0, 72.0, ZC0, Z_LOW + 0.01)                     # ön kenar tırnağı için iç kaburga
     # sayfa çizgileri (ön kenar, baş, kuyruk)
     lines = []
     z = ZC0 + 0.6
@@ -228,7 +234,8 @@ def page_block():
     cuts.append(_box(RIB_X - RIB_W / 2 - 0.2, RIB_X + RIB_W / 2 + 0.2, KY1 - 0.5, CY1 + 1, RIB_Z - 0.05, RIB_Z + RIB_T + 0.15))
     cuts.append(_box(RIB_X - RIB_W / 2 - 2.2, RIB_X + RIB_W / 2 + 2.2, KY1 - 0.5, KY1 + 2.4, RIB_Z - 0.5, RIB_Z + 2.3))
     # vida pilotları (arka kapak), pim delikleri (ön kapak, sırt)
-    cuts += [_cyl(1.25, ZC0 - 0.1, ZC0 + 7.5, x, y) for x, y in B_SCREWS]
+    for (cx, cy), (nx, ny), w in LATCHES:                                          # tırnak cepleri
+        cuts.append(_latch_box(cx, cy, nx, ny, w + 0.6, -0.05, HOOK + 0.25, LATCH_TOP - 2.0, LATCH_TOP + 0.3))
     cuts += [_cyl(1.2, ZC1 - 2.0, ZC1 + 0.1, x, y) for x, y in A_PINS]
     cuts += [_xcyl(1.2, CX0 - 0.1, KX0 + 0.2, y, PEN_Z) for y in D_PINS]
     for cut in cuts:
@@ -300,6 +307,24 @@ def strut(open_angle=0.0):
     return _lab(bd.Location(_strut_plane()) * s, "ayak")
 
 
+def _latch_box(cx, cy, nx, ny, w, n0, n1, z0, z1):
+    """Duvara göre kutu: duvar iç yüzü (cx,cy), normal (nx,ny) duvara doğru; n duvar yönünde, w duvar boyunca."""
+    if nx:
+        xs = sorted((cx + nx * n0, cx + nx * n1))
+        return _box(xs[0], xs[1], cy - w / 2, cy + w / 2, z0, z1)
+    ys = sorted((cy + ny * n0, cy + ny * n1))
+    return _box(cx - w / 2, cx + w / 2, ys[0], ys[1], z0, z1)
+
+
+def _latch_hook(cx, cy, nx, ny, w):
+    """Kanca: alt yüzü düz (tutar), üstü rampalı (kapatırken kayar)."""
+    z0 = LATCH_TOP - 1.8
+    prof = bd.Polygon((-0.1, z0), (HOOK, z0), (HOOK, z0 + 0.5), (-0.1, LATCH_TOP - 0.1), align=None)   # (n, z)
+    hook = bd.extrude(bd.Plane.XZ * prof, amount=-w / 2) + bd.extrude(bd.Plane.XZ * prof, amount=w / 2)   # yerel: x=n, y=en
+    ang = math.degrees(math.atan2(ny, nx))
+    return bd.Pos(cx, cy, 0) * (bd.Rot(0, 0, ang) * hook)
+
+
 def _strut_region_local(pad=0.5):
     w0, w1 = BARREL_L + 2 * pad, 7.0 + 2 * pad
     return bd.Polygon((-w0 / 2, 0), (-w1 / 2, -STRUT_L - pad), (w1 / 2, -STRUT_L - pad), (w0 / 2, 0), align=None)
@@ -332,6 +357,10 @@ def back_cover():
     for sx in (-1, 1):
         xw = SW_X + sx * (SW_L / 2 + 0.25)
         b += _box(*sorted((xw, xw + sx * 1.0)), LY1 - SW_BODY - 0.4, LY1 - 0.1, B_T - 0.01, SW_Z + SW_W / 2)
+    # esnek tırnaklar: kol + rampalı kanca
+    for (cx, cy), (nx, ny), w in LATCHES:
+        b += _latch_box(cx, cy, nx, ny, w, -0.1 - LATCH_T, -0.1, B_T - 0.01, LATCH_TOP)
+        b += _latch_hook(cx, cy, nx, ny, w)
     # ayak cebi (dış yüz), menteşe silindiri ve kuyruk cebi, pim deliği, parmak oyuğu
     cuts = [loc * bd.Pos(0, 0, 0.1) * bd.extrude(_strut_region_local(), amount=-2.1)]
     cuts.append(loc * _box(-BARREL_L / 2 - 0.3, BARREL_L / 2 + 0.3, -BARREL_R - 0.6, TAIL + 0.6, -(2 * BARREL_R + TAIL_G), 0.1))
@@ -339,9 +368,6 @@ def back_cover():
     foot = loc * bd.Pos(0, -STRUT_L + 2.0, 0) * bd.Cylinder(5.0, 3.0)
     cuts.append(foot & _box(0, W, 0, H, -1, 1.6))
     # vidalar (havşa), köşelik ve süs yuvaları
-    for x, y in B_SCREWS:
-        cuts.append(_cyl(1.7, -0.1, B_T + 0.1, x, y))
-        cuts.append(bd.Pos(x, y, 0.6) * bd.Cone(3.15, 1.5, 1.65, align=(bd.Align.CENTER, bd.Align.CENTER, bd.Align.MIN)))
     recess = _union([_tri(cx, cy, sx, sy, 15.2) for cx, cy, sx, sy in BACK_CORNERS])
     cuts.append(_slab(recess, -0.1, 0.6))
     engr = _frame_line(W - SP - 8.0, H - 8.0, 1.6, (SP + W) / 2, H / 2)
