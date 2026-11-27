@@ -24,8 +24,8 @@ küçük bir kitaba dönüştürüyor. Tıp okuyan, old money tarzını seven bi
 Ayak, arka kapaktaki cebinden açılır ve 40°'de durur (durdurak modelde test edildi: 0–40° serbest, sonrası
 kilitli). Kitap:
 
-- **dikey** (sayfa gibi) kuyruğu üstünde **24°** yaslanarak,
-- **yatay** (ön kenarı üstünde, sırt yukarıda) **22°** yaslanarak durur.
+- **dikey** (sayfa gibi) kuyruğu üstünde **31°** yaslanarak (devrilme payı ~15°),
+- **yatay** (ön kenarı üstünde, sırt yukarıda) **33°** yaslanarak durur (devrilme payı ~12°).
 
 Ekran içeriğini yazılımda döndür (`tft.setRotation`).
 

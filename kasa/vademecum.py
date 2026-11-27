@@ -94,10 +94,10 @@ PEN_X, PEN_Z = 4.25, T / 2
 BANDS = [22.6, 42.2, 61.7, 81.3]
 
 # şövale ayağı
-HINGE = (18.6, 52.0)                       # ayak ve menteşe aynı yerde (dıştan görünüm aynı)
-U = (math.sqrt(0.5), math.sqrt(0.5))       # menteşe ekseni (sırt düzleminde)
-V = (math.sqrt(0.5), -math.sqrt(0.5))      # ayak yönü (ön kenar-kuyruk köşesine)
-STRUT_L, TAIL = 62.0, 2.5
+HINGE = (21.0, 56.0)                       # ayak ve menteşe aynı yerde (dıştan görünüm aynı)
+U = (math.sin(math.radians(55)), math.cos(math.radians(55)))       # menteşe ekseni (sırt düzleminde)
+V = (math.cos(math.radians(55)), -math.sin(math.radians(55)))      # ayak yönü (ön kenar-kuyruk köşesine)
+STRUT_L, TAIL = 56.0, 2.5
 BARREL_R, BARREL_L = 2.0, 9.0
 PIN_R, BORE_R = 1.0, 1.1                   # menteşe pimi arka kapakla tek parça; ayağın C menteşesi pime tık diye takılır
 RIB_W2, RIB_R, GROOVE_W2, GROOVE_R = 0.35, 1.28, 0.42, 1.42   # pimdeki sırt; menteşedeki iki oluk (kapalı ve açık konum)
