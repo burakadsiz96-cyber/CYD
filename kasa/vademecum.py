@@ -99,7 +99,9 @@ U = (math.sqrt(0.5), math.sqrt(0.5))       # menteşe ekseni (sırt düzleminde)
 V = (math.sqrt(0.5), -math.sqrt(0.5))      # ayak yönü (ön kenar-kuyruk köşesine)
 STRUT_L, TAIL = 62.0, 2.5
 BARREL_R, BARREL_L = 2.0, 9.0
-PIN_R, PIN_CLR = 0.75, 0.4                 # menteşe pimi arka kapakla tek parça; ayak etrafında döner (yerinde basılır)
+PIN_R, BORE_R = 1.0, 1.1                   # menteşe pimi arka kapakla tek parça; ayağın C menteşesi pime tık diye takılır
+RIB_W2, RIB_R, GROOVE_W2, GROOVE_R = 0.35, 1.28, 0.42, 1.42   # pimdeki sırt; menteşedeki iki oluk (kapalı ve açık konum)
+SLOT_W = 1.6                               # C ağzı: pimden dar, pime tık diye takılır
 _b = math.radians(STRUT_STOP)
 TAIL_G = TAIL * math.sin(_b) + BARREL_R * math.cos(_b) - BARREL_R
 assert math.degrees(math.atan2(TAIL, BARREL_R)) > STRUT_STOP + 8
@@ -294,7 +296,12 @@ def strut_local():
         BARREL_R, BARREL_L, align=(bd.Align.CENTER, bd.Align.CENTER, bd.Align.MIN)))
     tail = _box(-BARREL_L / 2, BARREL_L / 2, 0.0, TAIL, -2 * BARREL_R, 0.0)
     s = plate + barrel + tail
-    s -= _xcyl(PIN_R + PIN_CLR, -BARREL_L, BARREL_L, 0.0, -BARREL_R)
+    # C menteşe: delik + 40° arayla iki oluk (pimdeki sırt kapalıda birine, açıkta öbürüne oturur) + takma ağzı (yerel -z)
+    groove = bd.Polygon((0.85, -GROOVE_W2), (GROOVE_R, 0.0), (0.85, GROOVE_W2), align=None)          # V oluk
+    bore = bd.Circle(BORE_R) + groove + (bd.Rot(0, 0, STRUT_STOP) * groove)
+    bore += bd.Pos(0, -2.5) * bd.Rectangle(SLOT_W, 5.0)
+    bore = bd.Pos(0, -BARREL_R) * bore
+    s -= bd.extrude(bd.Plane.YZ.offset(-BARREL_L) * bore, amount=2 * BARREL_L)
     # süs: kenara paralel ince çizgi (dış yüz)
     groove = bd.Polygon((-w0 / 2 + 1.4, -3), (-w1 / 2 + 1.4, -STRUT_L + 4), (w1 / 2 - 1.4, -STRUT_L + 4), (w0 / 2 - 1.4, -3), align=None)
     groove = groove - bd.offset(groove, -0.5)
@@ -325,6 +332,13 @@ def _latch_hook(cx, cy, nx, ny, w):
     hook = bd.extrude(bd.Plane.XZ * prof, amount=-w / 2) + bd.extrude(bd.Plane.XZ * prof, amount=w / 2)   # yerel: x=n, y=en
     ang = math.degrees(math.atan2(ny, nx))
     return bd.Pos(cx, cy, 0) * (bd.Rot(0, 0, ang) * hook)
+
+
+def _hinge_pin():
+    """Pim (ayak yerel çerçevesinde): Ø2 daire ve boyunca ince bir sırt; menteşedeki oluklara tık diye oturur."""
+    prof = bd.Circle(PIN_R) + bd.Polygon((0.8, -RIB_W2), (RIB_R, 0.0), (0.8, RIB_W2), align=None)   # V sırt (+y yönünde)
+    prof = bd.Pos(0, -BARREL_R) * prof
+    return bd.extrude(bd.Plane.YZ.offset(-BARREL_L / 2 - 1.0) * prof, amount=BARREL_L + 2.0)
 
 
 def _strut_region_local(pad=0.5):
@@ -375,7 +389,7 @@ def back_cover():
     cuts.append(_slab(engr, -0.1, 0.35))
     for c in cuts:
         b -= c
-    b += loc * _xcyl(PIN_R, -BARREL_L / 2 - 1.0, BARREL_L / 2 + 1.0, 0.0, -BARREL_R)   # menteşe pimi (kapakla tek parça)
+    b += loc * _hinge_pin()                                                     # menteşe pimi (kapakla tek parça)
     cover = _lab(b, "arka_kapak")
     return cover
 
@@ -627,8 +641,7 @@ def p_on_kapak():
 
 @model
 def p_arka_kapak():
-    """Arka kapak ve şövale ayağı tek baskıda: ayak cebinde, pim etrafında (yerinde basılır, sonra kırılıp serbest kalır)."""
-    return bd.Compound(children=[back_cover(), strut(0.0)], label="p_arka_kapak")
+    return back_cover()
 
 
 @model
@@ -676,7 +689,46 @@ def p_kapitalbant():
     return _lab(bd.Pos(0, 0, 7.2) * (bd.Rot(180, 0, 0) * headband_cap()), "kapitalbant")
 
 
+# ============================================================== renk başına baskı tablaları (baskı yönünde, yan yana)
+def _plate(parts, gap=6.0):
+    out, x = [], 0.0
+    for i, q in enumerate(parts):
+        bb = q.bounding_box()
+        out.append(_lab(bd.Pos(x - bb.min.X, -bb.min.Y, -bb.min.Z) * q, f"{q.label}_{i}", q.color))
+        x += bb.size.X + gap
+    return out
+
+
+@model
+def t_cikolata():
+    """Kapak rengi: ön kapak, arka kapak, sırt, şövale ayağı."""
+    parts = [_lab(_flip(front_cover(), T), "on_kapak"), back_cover(), _lab(bd.Rot(90, 0, 0) * spine(), "sirt"),
+             _lab(bd.Rot(180, 0, 0) * strut_local(), "ayak")]
+    return bd.Compound(children=_plate(parts), label="t_cikolata")
+
+
+@model
+def t_krem():
+    """Sayfa rengi: sayfa bloğu."""
+    return bd.Compound(children=_plate([_lab(_flip(page_block(), ZC1), "sayfa")]), label="t_krem")
+
+
+@model
+def t_sari():
+    """Yaldız: başlık levhası, arma, 2 ön köşelik, 3 arka köşelik."""
+    parts = [_lab(title_plate(), "baslik"), _lab(cartouche(), "arma")]
+    parts += [_lab(corner_piece(11.2), "kose") for _ in range(2)] + [_lab(corner_piece(15.2), "kose") for _ in range(3)]
+    return bd.Compound(children=_plate(parts), label="t_sari")
+
+
+@model
+def t_kirmizi():
+    """Kırmızı: kurdele, kalem başlığı (kapitalbant)."""
+    parts = [_lab(ribbon(), "kurdele"), _lab(bd.Pos(0, 0, 7.2) * (bd.Rot(180, 0, 0) * headband_cap()), "kapitalbant")]
+    return bd.Compound(children=_plate(parts), label="t_kirmizi")
+
+
 if __name__ == "__main__":
     for m in (vademecum, vm_dikey, vm_yatay, vm_kalem, vm_patlatma, vm_ic, p_on_kapak, p_arka_kapak, p_sayfa, p_sirt, p_ayak,
-              p_baslik, p_arma, p_kose_on, p_kose_arka, p_kurdele, p_kapitalbant):
+              p_baslik, p_arma, p_kose_on, p_kose_arka, p_kurdele, p_kapitalbant, t_cikolata, t_krem, t_sari, t_kirmizi):
         m()

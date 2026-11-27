@@ -31,6 +31,18 @@ Ekran içeriğini yazılımda döndür (`tft.setRotation`).
 
 ## Parçalar ve renkler
 
+**Renk tablaları** (`vademecum_cikti/tablalar/`): her renk tek dosyada, parçalar baskı yönünde yan yana.
+3MF'te her parça ayrı nesnedir; tabla 165 × 110 mm'ye sığar.
+
+| Tabla dosyası | Renk (konyak) | İçindekiler |
+|---|---|---|
+| `tabla_1_cikolata` | çikolata | ön kapak, arka kapak, sırt (dik), şövale ayağı |
+| `tabla_2_krem` | beyaz | sayfa bloğu (ön yüzü tablada) |
+| `tabla_3_sari` | sarı | başlık levhası, arma, 2 ön + 3 arka köşelik |
+| `tabla_4_kirmizi` | kırmızı | kurdele, kalem başlığı (kapitalbant) |
+
+Tek tek dosyalar da aynı klasörde:
+
 Dosyalar `vademecum_cikti/` klasöründe, **baskı yönünde** (STL + 3MF). Montaj: `vademecum_montaj.step`.
 
 | Dosya | Adet | Konyak | Yeşil | Siyah & Yaldız |
@@ -56,7 +68,6 @@ Bu kontroller genel tasarım kuralları; önce küçük parçalarla yazıcının
 
 - Vida yok. Kart, ön kapağın pimlerine ısıl perçinle tutturulur; arka kapak 4 esnek tırnakla oturur
 - Yapıştırıcı (süsler, ön kapak, sırt, kalem başlığı, arka köşelikler) ve çift taraflı bant (pil, TP4056, MT3608)
-- ~14 mm 1,75 mm filament parçası (ayak menteşe pimi)
 - LiPo 51×36×8 mm
 - TP4056 USB-C şarj modülü, korumalı (HW-373, 31×19×5 mm)
 - MT3608 yükseltici (40×18×6 mm)
@@ -98,7 +109,8 @@ kullan.
    kartın arkasından çıkan 1,6 mm'lik uçlarını sıcak havya ucuyla 2–3 saniye bastırıp yassılat (ısıl perçin).
    Havyayı kartın bakır yollarına değdirme.
 6. Arka kapakta:
-   - ayağı cebine yerleştir, filament pimi menteşe bloğundan geçir;
+   - ayağı cebine bastır: C şeklindeki menteşesi arka kapağın pimine tık diye takılır. Ayak kapalıda ve 40°'de
+     tık diye oturur, arada hafif dirençle döner;
    - pili tırnakların arasına bantla;
    - TP4056'yı yatağına, USB-C başa bakacak şekilde yerleştir;
    - MT3608'i yan tırnaklarının arasına bantla;
