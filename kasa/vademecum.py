@@ -26,61 +26,67 @@ from cad.build123d import memo
 ENGRAVE = "/usr/share/fonts/opentype/inter/InterDisplay-Bold.otf"   # gravür levhası harfi
 
 # ============================================================== CYD kartı (dikey: uzun kenar Y boyunca)
-PCB_W, PCB_H, PCB_T = 50.0, 86.0, 1.6
+PCB_W, PCB_H, PCB_T = 50.0, 87.0, 1.6
 LCD_W, LCD_H, LCD_T = 50.0, 70.0, 4.0
 VIEW_W, VIEW_H = 43.2, 57.6
-BACK_PARTS = 4.8
+CARD_T = 11.0                              # kartın toplam kalınlığı (LCD + kart + arka parçalar), ölçüldü
+BACK_PARTS = CARD_T - LCD_T - PCB_T        # 5.4: microSD yuvası, konnektörler
 CLR = 0.3
 HOLE_X = model.param("delik_araligi_kisa", 42.0, min=36, max=46, unit="mm")
 HOLE_Y = model.param("delik_araligi_uzun", 78.0, min=70, max=82, unit="mm")
 VIEW_DY = model.param("ekran_kaydirma", 0.0, min=-5, max=5, unit="mm")     # LCD'nin uzun eksende kayması
-USB_X = model.param("usb_x", 30.0, min=22, max=34, unit="mm")              # baş kenarda kartın USB'si
-SD_X = model.param("sd_x", 35.0, min=22, max=50, unit="mm")               # kuyrukta microSD
+USB_X = model.param("usb_x", 35.6, min=28, max=44, unit="mm")              # kartın USB-C'si (sırt kenarından), baş kenarda
+SD_Y = model.param("sd_y", 61.3, min=40, max=80, unit="mm")               # microSD (kuyruktan), ön kenarda
 STYLUS_D = model.param("kalem_cap", 5.0, min=3.5, max=5.6, unit="mm")
 STYLUS_L = model.param("kalem_boy", 87.0, min=60, max=98, unit="mm")
 STRUT_STOP = model.param("ayak_acisi", 40.0, min=30, max=50, unit="deg")
 
 # ============================================================== kitap
-W, H, T = 66.0, 104.0, 21.8
+W, H, T = 69.0, 107.0, 25.8                # 6,9 x 10,7 x 2,6 cm
 SP = 8.5                                   # sırt genişliği
 A_T, B_T, SQ = 2.8, 3.0, 2.0               # ön/arka kapak kalınlığı, kapak payı
-ZC0, ZC1 = B_T, T - A_T                    # sayfa bloğu z: 3.0 .. 19.0
+ZC0, ZC1 = B_T, T - A_T                    # sayfa bloğu z: 3.0 .. 23.0
 CX0, CX1, CY0, CY1 = SP, W - SQ, SQ, H - SQ
-XB = CX0 + 1.6 + CLR + PCB_W / 2           # kart merkezi
-YB = (CY0 + CY1) / 2
-KX0, KX1 = CX0 + 1.6, XB + PCB_W / 2 + CLR # boşluk
+XB = 36.9                                  # kart merkezi (ekran kapakta önceki oranla aynı yerde)
+YB = H / 2
+KX0, KX1 = XB - PCB_W / 2 - CLR, XB + PCB_W / 2 + CLR   # kart boşluğu
 KY0, KY1 = YB - PCB_H / 2 - CLR, YB + PCB_H / 2 + CLR
-Z_PCB1 = ZC1 - LCD_T                       # kart ön yüzü 15.0
-Z_PCB0 = Z_PCB1 - PCB_T                    # 13.4
+Z_PCB1 = ZC1 - LCD_T                       # kart ön yüzü 19.0
+Z_PCB0 = Z_PCB1 - PCB_T                    # 17.4
+Z_LOW = Z_PCB0 - BACK_PARTS                # 12.0: kartın altındaki parçaların başladığı yükseklik
+LX0, LX1, LY0, LY1 = CX0 + 1.6, CX1 - 1.3, CY0 + 2.4, CY1 - 2.4   # kartın altındaki geniş boşluk (pil, TP4056, MT3608)
 WX, WY = XB, YB + VIEW_DY                  # ekran penceresi merkezi
 WIN_W, WIN_H = VIEW_W + 0.8, VIEW_H + 0.8
 
 BOARD_HOLES = [(XB + sx * HOLE_X / 2, YB + sy * HOLE_Y / 2) for sx in (-1, 1) for sy in (-1, 1)]
-B_SCREWS = [(12.5, CY0 + 3.35), (12.5, CY1 - 3.35), (61.0, CY1 - 3.35)]   # havşa başlı M3x10, köşeliklerin altında
-B_PIN = (58.0, CY0 + 3.35)
+B_SCREWS = [(12.25, 8.0), (63.3, CY1 - 3.35)]   # havşa başlı M3x10, köşeliklerin altında (çapraz iki köşe)
 A_PINS = [(22.0, CY1 - 2.6), (48.0, CY1 - 2.6), (22.0, CY0 + 2.6), (48.0, CY0 + 2.6)]
-D_PINS = [30.0, 52.0, 74.0]
+D_PINS = [31.0, 53.5, 76.0]
 
 # baş kenar portları
-SW_X, USBC_X, RIB_X = 20.0, 45.6, 57.5
-USBC_Z = B_T + 1.6 + 1.65                  # TP4056 arka kapağa yatık: USB-C ekseni
-# iç düzen (dış görünüm sabit): pil kuyrukta enine, MT3608 ortada enine, TP4056 başta
-BAT_T = 5.0                                # 503450 LiPo kalınlığı
-BAT = (KX0 + 0.3, KX0 + 50.3, KY0 + 0.3, KY0 + 34.3)   # 503450 (x0, x1, y0, y1): 50 mm enine, kuyruk ve yan duvarlara yaslanır
-BOOST_L, BOOST_W, BOOST_H = 36.0, 17.0, 7.0  # MT3608 yükseltici (trimpot ve alttaki pim uçları dahil yükseklik)
-BOOST_REC = 1.5                            # arka kapağın iç yüzünde MT3608 yuvası (dış yüz değişmez)
-BOOST = (KX1 - 0.2 - BOOST_L, KX1 - 0.2, 56.4, 56.4 + BOOST_W)       # menteşe bloğunun hemen üstü
-TP_L, TP_OVER = 26.0, 0.6                  # TP4056 (HW-373) kart boyu, USB-C soketin kart kenarından taşması
-TP_FRONT = CY1 - 1.2 - 0.5                 # soket ön yüzü: kablonun fişi dıştaki cepten sokete tam girer
-TP = (37.0, 54.2, TP_FRONT - TP_OVER - TP_L, TP_FRONT - TP_OVER)   # TP4056 (USB-C başa bakar)
+# iç düzen (ölçülen parçalar): pil kuyrukta enine, MT3608 ortada boyuna, TP4056 başta sırt tarafında, anahtar başın ortasında
+BAT_L, BAT_W, BAT_T = 51.0, 36.0, 8.0      # LiPo
+LEAD_ROOM = 4.0                            # pilin kablolu ucunun önünde boşluk (sırt tarafı)
+BAT = (LX0 + LEAD_ROOM + 0.3, LX0 + LEAD_ROOM + 0.3 + BAT_L, LY0 + 0.3, LY0 + 0.3 + BAT_W)
+BOOST_L, BOOST_W, BOOST_H = 40.0, 18.0, 6.0  # MT3608 (trimpot dahil)
+BOOST = (32.4, 32.4 + BOOST_W, 44.7, 44.7 + BOOST_L)   # boyuna: VOUT kuyruk tarafında, VIN baş tarafında
+TP_L, TP_W, TP_H, TP_OVER = 31.0, 19.0, 5.0, 1.75     # TP4056 (HW-373): kart, toplam yükseklik, USB-C taşması
+USBC_X = 21.6                              # TP4056 USB-C (şarj) deliği
+TP_Z0 = B_T + 0.6                          # TP4056 yatağı: fiş gövdesi arka kapağa değmesin
+USBC_Z = TP_Z0 + 1.6 + 1.6                 # soket ekseni
+TP_FRONT = CY1 - 1.2 - 0.5                 # soket ön yüzü: fiş dıştaki cepten sokete tam girer
+TP = (USBC_X - TP_W / 2, USBC_X + TP_W / 2, TP_FRONT - TP_OVER - TP_L, TP_FRONT - TP_OVER)
+SW_L, SW_W, SW_BODY, SW_LEVER = 11.5, 6.0, 5.5, 4.5    # anahtar: gövde boyu (sürgü yönü), eni, derinliği, kolu
+SW_X, SW_Z = 38.35, ZC0 + 1.0 + SW_W / 2   # anahtarın merkezi (başın ortası, kartın USB-C'sinin altında)
+RIB_X, RIB_Z = 60.0, ZC0 + 0.6 + 0.8 * 13  # kurdele (z 14.0)
 
 # sırt ve kalem
 R_SP = ((T / 2) ** 2 + SP ** 2) / (2 * SP)
 PEN_X, PEN_Z = 4.25, T / 2
-BANDS = [22.0, 41.0, 60.0, 79.0]
+BANDS = [22.6, 42.2, 61.7, 81.3]
 
 # şövale ayağı
-HINGE = (18.6, 52.0)
+HINGE = (18.6, 52.0)                       # ayak ve menteşe aynı yerde (dıştan görünüm aynı)
 U = (math.sqrt(0.5), math.sqrt(0.5))       # menteşe ekseni (sırt düzleminde)
 V = (math.sqrt(0.5), -math.sqrt(0.5))      # ayak yönü (ön kenar-kuyruk köşesine)
 STRUT_L, TAIL = 62.0, 2.5
@@ -144,7 +150,7 @@ def _frame_line(w, h, r, x, y, width=0.5):
 
 
 # ============================================================== ön kapak (A)
-TITLE_Y, CART_Y = 92.0, 12.6
+TITLE_Y, CART_Y = 95.0, 13.6
 
 
 def _title_plate_outline():
@@ -188,7 +194,11 @@ def front_cover():
 def page_block():
     c = _box(CX0, CX1, CY0, CY1, ZC0, ZC1)
     c = c.fillet(1.2, c.edges().filter_by(bd.Axis.Z).filter_by_position(bd.Axis.X, CX1 - 0.1, CX1 + 0.1))
-    c -= _box(KX0, KX1, KY0, KY1, ZC0 - 1, ZC1 + 1)
+    c -= _box(LX0, LX1, LY0, LY1, ZC0 - 1, Z_LOW)                                  # kartın altı: pil, TP4056, MT3608, anahtar
+    c -= _box(KX0, KX1, KY0, KY1, Z_LOW - 0.01, ZC1 + 1)                           # kart
+    # vida ayakları (kartın altındaki boşlukta, sayfa bloğuna bağlı)
+    c += _box(LX0 - 0.01, B_SCREWS[0][0] + 2.05, B_SCREWS[0][1] - 2.2, B_SCREWS[0][1] + 2.2, ZC0, Z_LOW + 0.01)
+    c += _box(61.0, LX1 + 0.01, B_SCREWS[1][1] - 2.4, LY1 + 0.01, ZC0, Z_LOW + 0.01)
     # sayfa çizgileri (ön kenar, baş, kuyruk)
     lines = []
     z = ZC0 + 0.6
@@ -198,29 +208,28 @@ def page_block():
         lines += [_box(CX1 - 0.35, CX1 + 1, CY0 - 1, CY1 + 1, z, z + 0.4),
                   _box(CX0 - 1, CX1 + 1, CY1 - 0.35, CY1 + 1, z, z + 0.4),
                   _box(CX0 - 1, CX1 + 1, CY0 - 1, CY0 + 0.35, z, z + 0.4)]
-        if k in (8, 11, 14):                                                        # havalandırma "sayfa aralıkları"
-            vents.append(_box(KX1 - 0.5, CX1 + 1, 30.0, 76.0, z, z + 1.2))
+        if k in (2, 5, 8):                                                          # havalandırma "sayfa aralıkları" (pil ve MT3608 hizası)
+            vents.append(_box(LX1 - 0.5, CX1 + 1, 14.0, 50.0, z, z + 1.2))
+            vents.append(_box(LX1 - 0.5, CX1 + 1, 74.0, 96.0, z, z + 1.2))
         z += 0.8
         k += 1
     cuts = [_union(lines), *vents]
-    # baş: anahtar cebi + kol yarığı, kartın USB'si, USB-C, kurdele yuvası
-    cuts.append(_box(SW_X - 4.6, SW_X + 4.6, KY1 - 0.2, CY1 - 2.7, ZC0 + 1.0, ZC0 + 8.0))
-    cuts.append(_box(SW_X - 2.6, SW_X + 2.6, CY1 - 2.9, CY1 + 1, ZC0 + 3.4, ZC0 + 5.6))
-    cuts.append(_box(USB_X - 6.0, USB_X + 6.0, KY1 - 0.5, CY1 + 1, Z_PCB0 - 5.4, Z_PCB0 + 2.6))
-    usbc = _box(USBC_X - 3.1, USBC_X + 3.1, KY1 - 0.5, CY1 + 1, USBC_Z - 2.1, USBC_Z + 2.1)
-    usbc += _ycyl(2.1, KY1 - 0.5, CY1 + 1, USBC_X - 3.1, USBC_Z) + _ycyl(2.1, KY1 - 0.5, CY1 + 1, USBC_X + 3.1, USBC_Z)
+    # baş: TP4056 USB-C (şarj), anahtar kolu, kartın USB-C'si, kurdele
+    usbc = _box(USBC_X - 3.1, USBC_X + 3.1, LY1 - 0.5, CY1 + 1, USBC_Z - 2.1, USBC_Z + 2.1)
+    usbc += _ycyl(2.1, LY1 - 0.5, CY1 + 1, USBC_X - 3.1, USBC_Z) + _ycyl(2.1, LY1 - 0.5, CY1 + 1, USBC_X + 3.1, USBC_Z)
     cuts.append(usbc)
-    tx0, tx1, ty0, ty1 = TP
-    cuts.append(_box(tx0 - 0.3, tx1 + 0.3, KY1 - 0.5, ty1 + 0.3, ZC0 - 0.1, B_T + 1.6 + 0.2))   # TP4056 kart ucu yarığı (içte)
-    cuts.append(_box(USBC_X - 6.4, USBC_X + 6.4, CY1 - 1.2, CY1 + 1, ZC0 - 0.6, ZC0 + 0.6 + 8 * 0.8 + 0.4))
-    cuts.append(_box(RIB_X - 3.2, RIB_X + 3.2, KY1 - 0.5, CY1 + 1, 11.2, 13.0))
-    cuts.append(_box(RIB_X - 5.2, RIB_X + 5.2, KY1 - 0.5, KY1 + 2.4, 10.7, 13.5))
-    # kuyruk: microSD
-    cuts.append(_box(SD_X - 7.5, SD_X + 7.5, CY0 - 1, KY0 + 0.5, Z_PCB0 - 4.4, Z_PCB0 + 1.2))
-    # vida pilotları (arka kapak), pim delikleri (ön kapak, arka kapak, sırt)
+    cuts.append(_box(USBC_X - 6.4, USBC_X + 6.4, CY1 - 1.2, CY1 + 1, ZC0 - 0.6, ZC0 + 0.6 + 8 * 0.8 + 0.4 + 0.8))
+    cuts.append(_box(SW_X - 3.6, SW_X + 3.6, LY1 - 0.5, CY1 + 1, SW_Z - 1.4, SW_Z + 1.4))
+    cuts.append(_box(USB_X - 6.75, USB_X + 6.75, KY1 - 0.5, CY1 + 1, Z_PCB0 - 5.6, Z_PCB0 + 2.4))
+    cuts.append(_box(RIB_X - 3.2, RIB_X + 3.2, KY1 - 0.5, CY1 + 1, RIB_Z - 0.05, RIB_Z + 1.75))
+    cuts.append(_box(RIB_X - 5.2, RIB_X + 5.2, KY1 - 0.5, KY1 + 2.4, RIB_Z - 0.5, RIB_Z + 2.3))
+    # ön kenar: microSD yarığı ve tırnak oyuğu (sayfa çizgileriyle hizalı)
+    sz0, sz1 = ZC0 + 0.6 + 0.8 * 14, ZC0 + 0.6 + 0.8 * 18                        # 14.8 .. 18.0
+    cuts.append(_box(KX1 - 0.5, CX1 + 1, SD_Y - 7.5, SD_Y + 7.5, sz0, sz1))
+    cuts.append(_box(CX1 - 1.6, CX1 + 1, SD_Y - 9.5, SD_Y + 9.5, sz0 - 0.8, sz1 + 0.8))
+    # vida pilotları (arka kapak), pim delikleri (ön kapak, sırt)
     cuts += [_cyl(1.25, ZC0 - 0.1, ZC0 + 7.5, x, y) for x, y in B_SCREWS]
     cuts += [_cyl(1.2, ZC1 - 2.0, ZC1 + 0.1, x, y) for x, y in A_PINS]
-    cuts.append(_cyl(1.2, ZC0 - 0.1, ZC0 + 2.0, *B_PIN))
     cuts += [_xcyl(1.2, CX0 - 0.1, KX0 + 0.2, y, PEN_Z) for y in D_PINS]
     for cut in cuts:
         c -= cut
@@ -251,7 +260,8 @@ def spine():
             pass
         d += band
     d -= _ycyl(STYLUS_D / 2 + 0.3, 8.0, H + 1, PEN_X, PEN_Z)                      # kalem tüneli
-    d -= _ycyl(3.45, H - 2.0, H + 1, PEN_X, PEN_Z)                                   # kapitalbant yuvası (et 0.8)
+    d -= _ycyl(3.45, H - 4.2, H + 1, PEN_X, PEN_Z)                                   # kapitalbant yuvası (et 0.8)
+    d += _ycyl(3.5, H - 0.8, H - 0.2, PEN_X, PEN_Z) - _ycyl(3.25, H - 1, H, PEN_X, PEN_Z)   # tırnak halkası (0.15 mm sıkı geçer)
     for y in D_PINS:
         d += _xcyl(1.05, SP - 0.01, SP + 1.4, y, PEN_Z)
     s = _lab(d, "sirt")
@@ -303,22 +313,31 @@ def back_cover():
     # menteşe bloğu (iç yüzde, sayfa bloğunun boşluğuna girer)
     block = loc * _box(-BARREL_L / 2 - 2.6, BARREL_L / 2 + 2.6, -3.2, TAIL + 2.0, -(2 * BARREL_R + TAIL_G + 1.4), -B_T + 0.01)
     b += block
-    # pil ve TP4056 tırnakları
-    x0, x1, y0, y1 = BAT                                                       # pil: kuyruk ve yan duvarlar + baş tarafta iki tırnak
-    b += _box(x0 + 1.0, x0 + 9.0, y1 + 0.3, y1 + 1.5, B_T - 0.01, B_T + 2.6)
-    b += _box(x1 - 9.0, x1 - 1.0, y1 + 0.3, y1 + 1.5, B_T - 0.01, B_T + 2.6)
-    tx0, tx1, ty0, ty1 = TP                                                    # TP4056 rayları; içe itilince MT3608'e dayanır
-    b += _box(tx0 - 1.4, tx0 - 0.2, ty0, KY1 - 0.2, B_T - 0.01, B_T + 2.4)
-    b += _box(tx1 + 0.2, tx1 + 1.4, ty0, KY1 - 0.2, B_T - 0.01, B_T + 2.4)
-    b += _cyl(1.1, B_T - 0.01, B_T + 1.8, *B_PIN)
+    # pil tırnakları (pil kuyruk, sırt ve ön kenar duvarlarına yaslanır; baş tarafında iki tırnak)
+    x0, x1, y0, y1 = BAT
+    b += _box(x0 + 2.0, x0 + 12.0, y1 + 0.3, y1 + 1.5, B_T - 0.01, B_T + 2.6)
+    b += _box(x1 - 10.0, x1 - 1.5, y1 + 0.3, y1 + 1.5, B_T - 0.01, B_T + 2.6)
+    # TP4056 yatağı ve rayları
+    tx0, tx1, ty0, ty1 = TP
+    ty1 = min(ty1, LY1 - 0.2)
+    b += _box(tx0, tx1, ty0, ty1, B_T - 0.01, TP_Z0)
+    b += _box(tx0 - 1.0, tx0 - 0.2, ty0, ty1, B_T - 0.01, TP_Z0 + 2.4)
+    b += _box(tx1 + 0.2, tx1 + 1.0, ty0, ty1, B_T - 0.01, TP_Z0 + 2.4)
+    # MT3608 yan tırnakları
+    bx0, bx1, by0, by1 = BOOST
+    for yy in (by0 + 6.0, by1 - 12.0):
+        b += _box(bx0 - 1.0, bx0 - 0.2, yy, yy + 6.0, B_T - 0.01, B_T + 2.4)
+        b += _box(bx1 + 0.2, bx1 + 1.0, yy, yy + 6.0, B_T - 0.01, B_T + 2.4)
+    # anahtar beşiği: iki yan duvar
+    for sx in (-1, 1):
+        xw = SW_X + sx * (SW_L / 2 + 0.25)
+        b += _box(*sorted((xw, xw + sx * 1.0)), LY1 - SW_BODY - 0.4, LY1 - 0.1, B_T - 0.01, SW_Z + SW_W / 2)
     # ayak cebi (dış yüz), menteşe silindiri ve kuyruk cebi, pim deliği, parmak oyuğu
     cuts = [loc * bd.Pos(0, 0, 0.1) * bd.extrude(_strut_region_local(), amount=-2.1)]
     cuts.append(loc * _box(-BARREL_L / 2 - 0.3, BARREL_L / 2 + 0.3, -BARREL_R - 0.6, TAIL + 0.6, -(2 * BARREL_R + TAIL_G), 0.1))
     cuts.append(loc * _xcyl(0.95, -BARREL_L / 2 - 2.8, BARREL_L / 2 + 2.8, 0.0, -BARREL_R))
     foot = loc * bd.Pos(0, -STRUT_L + 2.0, 0) * bd.Cylinder(5.0, 3.0)
     cuts.append(foot & _box(0, W, 0, H, -1, 1.6))
-    bx0, bx1, by0, by1 = BOOST                                                 # MT3608 yuvası (iç yüz)
-    cuts.append(_box(bx0 - 0.3, bx1 + 0.3, by0 - 0.3, by1 + 0.3, B_T - BOOST_REC, B_T + 0.1))
     # vidalar (havşa), köşelik ve süs yuvaları
     for x, y in B_SCREWS:
         cuts.append(_cyl(1.7, -0.1, B_T + 0.1, x, y))
@@ -381,10 +400,12 @@ def ribbon():
 
 
 def headband_cap():
-    """Kapitalbant görünümlü kalem başlığı: alt 2 mm sırttaki yuvaya oturur, kalemin arka ucunu 3.2 mm sıkar."""
-    cap = _cyl(3.4, 0.0, 5.0)
+    """Kapitalbant görünümlü kalem başlığı: alt 4.2 mm sırttaki yuvaya girer, dışarıda 3 mm kalır (önceki görünüm).
+    Kalemin arka ucunu 3.2 mm sıkar. Tırnak: 3.4-4.0 mm'deki oluk, yuva ağzındaki halkaya tık diye oturur."""
+    cap = _cyl(3.4, 0.0, 7.2)
     cap = cap.fillet(0.7, cap.edges().group_by(bd.Axis.Z)[-1])
-    cap -= _cyl(3.6, 3.6, 4.0) - _cyl(3.05, 0, 6)
+    cap -= _cyl(3.6, 5.8, 6.2) - _cyl(3.05, 0, 8)                              # süs oluğu (görünen kısımda)
+    cap -= _cyl(3.6, 3.4, 4.0) - _cyl(3.2, 0, 8)                               # tırnak oluğu
     cap -= _cyl(STYLUS_D / 2 + 0.08, -0.1, 3.2)
     return cap
 
@@ -397,8 +418,8 @@ def small_parts():
     for i, (cx, cy, sx, sy) in enumerate(BACK_CORNERS):
         piece = bd.Pos(cx, cy, 0.6) * (bd.Rot(180, 0, 0) * _corner_place(corner_piece(15.2), sx, -sy))
         out.append(_lab(piece, f"kose{i + 2}"))
-    out.append(_lab(bd.Pos(RIB_X, CY1, 11.25) * ribbon(), "kurdele"))
-    out.append(_lab(bd.Pos(PEN_X, H - 2.0, PEN_Z) * (bd.Rot(-90, 0, 0) * headband_cap()), "kapitalbant"))
+    out.append(_lab(bd.Pos(RIB_X, CY1, RIB_Z + 0.05) * ribbon(), "kurdele"))
+    out.append(_lab(bd.Pos(PEN_X, H - 4.2, PEN_Z) * (bd.Rot(-90, 0, 0) * headband_cap()), "kapitalbant"))
     return out
 
 
@@ -420,21 +441,58 @@ def internals():
     x0, x1, y0, y1 = BAT
     bat = _box(x0, x1, y0, y1, B_T + 0.2, B_T + 0.2 + BAT_T)
     tx0, tx1, ty0, ty1 = TP
-    tp = _box(tx0, tx1, ty0, ty1, B_T, B_T + 1.6) + _box(USBC_X - 4.45, USBC_X + 4.45, ty1 - 7.4 + TP_OVER, ty1 + TP_OVER,
-                                                        USBC_Z - 1.6, USBC_Z + 1.6)
+    tp = _box(tx0, tx1, ty0, ty1, TP_Z0, TP_Z0 + 1.6) + _box(USBC_X - 4.45, USBC_X + 4.45, ty1 - 7.4 + TP_OVER, ty1 + TP_OVER,
+                                                            USBC_Z - 1.6, USBC_Z + 1.6)
+    tp += _box(tx0 + 2.0, tx1 - 2.0, ty0 + 3.0, ty1 - 9.0, TP_Z0 + 1.6, B_T + TP_H)       # en yüksek parçalar
     bx0, bx1, by0, by1 = BOOST
-    zb = B_T - BOOST_REC
+    zb = B_T + 0.05
     boost = _box(bx0, bx1, by0, by1, zb + 1.0, zb + 2.6)                         # kart (altta 1 mm pim ucu payı)
-    boost += _box(bx1 - 12.0, bx1 - 2.0, by0 + 2.0, by0 + 12.0, zb + 2.6, zb + BOOST_H)   # trimpot
-    boost += _box(bx0 + 12.0, bx0 + 18.0, by0 + 5.0, by0 + 11.0, zb + 2.6, zb + 7.0 - 0.1)  # bobin
-    sw = _box(SW_X - 4.3, SW_X + 4.3, KY1, KY1 + 3.6, ZC0 + 2.5, ZC0 + 6.0)
-    pen = _ycyl(STYLUS_D / 2, H + 1.2 - STYLUS_L + 3.0, H + 1.2, PEN_X, PEN_Z)
-    pen += bd.Pos(PEN_X, H + 1.2 - STYLUS_L + 3.0, PEN_Z) * (bd.Rot(90, 0, 0) * bd.Cone(
+    boost += _box(bx0 + 2.0, bx0 + 12.0, by1 - 13.0, by1 - 3.0, zb + 2.6, zb + BOOST_H)  # trimpot
+    boost += _box(bx0 + 6.0, bx0 + 12.0, by0 + 14.0, by0 + 20.0, zb + 2.6, zb + 5.5)     # bobin
+    sw = _box(SW_X - SW_L / 2, SW_X + SW_L / 2, LY1 - SW_BODY, LY1, SW_Z - SW_W / 2, SW_Z + SW_W / 2)   # gövde, duvara dayalı
+    sw += _box(SW_X - 1.0, SW_X + 1.0, LY1, LY1 + SW_LEVER - 0.5, SW_Z - 1.0, SW_Z + 1.0)              # kol (yarıktan dışarı)
+    sw += _box(SW_X - 4.0, SW_X + 4.0, LY1 - SW_BODY - 4.0, LY1 - SW_BODY, SW_Z - 0.5, SW_Z + 0.5)     # pinler
+    pen_top = H - 4.2 + 3.2                                                      # kalemin arka ucu başlığın içinde
+    pen = _ycyl(STYLUS_D / 2, pen_top - STYLUS_L + 3.0, pen_top, PEN_X, PEN_Z)
+    pen += bd.Pos(PEN_X, pen_top - STYLUS_L + 3.0, PEN_Z) * (bd.Rot(90, 0, 0) * bd.Cone(
         STYLUS_D / 2, 0.6, 3.0, align=(bd.Align.CENTER, bd.Align.CENTER, bd.Align.MIN)))
     pin = loc_pin()
     return [_lab(pcb, "ic_kart", "#d9b81c"), _lab(lcd, "ic_lcd", "#151515"), _lab(glass, "ekran"),
             _lab(bat, "ic_pil", "#b9c3cf"), _lab(tp, "ic_tp4056", "#1f6fd1"), _lab(sw, "ic_anahtar", "#202020"),
             _lab(boost, "ic_yukseltici", "#1f5fc0"), _lab(pen, "kalem"), pin]
+
+
+def _wire(points, r=0.8):
+    """Kablo: noktalardan geçen Ø1.6 mm tüp (silikon 24-26 AWG)."""
+    segs = []
+    for a, b in zip(points, points[1:]):
+        a, b = bd.Vector(*a), bd.Vector(*b)
+        d = b - a
+        segs.append(bd.Location(bd.Plane(origin=a, z_dir=d)) * bd.Cylinder(r, d.length, align=(bd.Align.CENTER, bd.Align.CENTER, bd.Align.MIN)))
+    for q in points[1:-1]:
+        segs.append(bd.Pos(*q) * bd.Sphere(r))
+    return _union(segs)
+
+
+def wires():
+    """Kablo yolları (fotoğraftaki devre): pil → TP4056 B+/B-, OUT+ → anahtar → MT3608 VIN+, OUT- → VIN-, VOUT → kartın P1'i."""
+    bx0, bx1, by0, by1 = BOOST
+    tx0, tx1, ty0, ty1 = TP
+    x0, x1, y0, y1 = BAT
+    zp_tp, zp_mt = TP_Z0 + 1.6 + 0.9, B_T + 0.05 + 2.6 + 0.9
+    pin_y = LY1 - SW_BODY - 4.3
+    zc = 10.4                                                        # TP4056 ve MT3608'in üstünden geçiş yüksekliği
+    p1 = (KX0 + 0.3 + 13.0, KY1 - 2.5, Z_LOW - 1.0)                   # kartın P1 konnektörü (VIN/GND)
+    routes = {
+        "pil_arti": [(x0 - 0.4, y1 - 3.0, 7.0), (LX0 + 2.0, y1 - 1.0, 9.5), (LX0 + 2.0, ty0 - 4.0, 9.5), (tx0 + 4.0, ty0 + 1.0, zp_tp)],
+        "pil_eksi": [(x0 - 0.4, y1 - 5.0, 5.5), (LX0 + 1.0, y1 + 1.0, 8.0), (LX0 + 1.2, ty0 - 5.0, 8.0), (tx0 + 7.5, ty0 + 1.0, zp_tp)],
+        "out_arti_anahtar": [(tx1 - 2.0, ty0 + 1.0, zp_tp), (bx0 - 0.6, ty0 + 2.0, zc), (bx0 - 0.6, pin_y - 3.0, zc), (SW_X + 2.0, pin_y, SW_Z)],
+        "anahtar_vin_arti": [(SW_X - 2.0, pin_y, SW_Z), (bx0 + 3.5, by1 + 2.0, SW_Z), (bx0 + 3.5, by1 - 1.5, zp_mt)],
+        "out_eksi_vin_eksi": [(tx1 - 5.0, ty0 + 1.0, zp_tp), (bx0 + 2.0, ty0 + 4.0, zc), (bx1 - 3.5, by1 - 6.0, zc), (bx1 - 3.5, by1 - 1.5, zp_mt)],
+        "vout_p1_arti": [(bx0 + 3.5, by0 + 1.5, zp_mt), (bx0 + 3.5, by0 - 1.0, 8.0), (bx0 - 0.6, by0 + 2.0, zc + 0.4), (bx0 - 0.6, ty0 - 1.0, zc + 0.4), (p1[0] + 1.0, p1[1] - 8.0, zc + 0.4), (p1[0] + 1.0, p1[1], p1[2])],
+        "vout_p1_eksi": [(bx1 - 3.5, by0 + 1.5, zp_mt), (bx1 - 3.5, by0 - 1.0, 8.0), (bx1 - 1.0, by0 + 6.0, zc), (bx1 - 1.0, by1 - 10.0, zc), (bx1 - 6.0, by1 + 3.0, zc), (p1[0] - 1.0, p1[1] - 4.0, zc), (p1[0] - 1.0, p1[1], p1[2])],
+    }
+    return [_lab(_wire(pts), "ic_kablo_" + k, "#c8202a" if "arti" in k else "#222222") for k, pts in routes.items()]
 
 
 def loc_pin():
@@ -445,7 +503,7 @@ def loc_pin():
 def book(open_angle=0.0, inside=True, pen_out=0.0):
     parts = [front_cover(), page_block(), spine(), back_cover(), strut(open_angle), *small_parts()]
     if inside:
-        parts += internals()
+        parts += internals() + wires()
     if pen_out:
         parts = [_lab(bd.Pos(0, pen_out, 0) * p, p.label, p.color) if p.label in ("kalem", "kapitalbant") else p for p in parts]
     return parts
@@ -527,7 +585,7 @@ def vm_patlatma():
 def vm_ic():
     """İç düzen görünümü: ön kapak, ekran ve kart yok; pil, MT3608, TP4056, anahtar ve menteşe görünür."""
     keep = ("arka_kapak", "sayfa", "ic_pil", "ic_tp4056", "ic_yukseltici", "ic_anahtar", "kurdele", "pim", "ayak")
-    return bd.Compound(children=[q for q in book() if q.label in keep], label="vm_ic")
+    return bd.Compound(children=[q for q in book() if q.label in keep or q.label.startswith("ic_kablo")], label="vm_ic")
 
 
 def _flip(shape, top):
@@ -546,7 +604,7 @@ def p_arka_kapak():
 
 @model
 def p_sayfa():
-    return _lab(bd.Pos(0, 0, -ZC0) * page_block(), "sayfa")
+    return _lab(_flip(page_block(), ZC1), "sayfa")                  # ön yüzü tablada: alttaki geniş boşluk desteksiz çıkar
 
 
 @model
@@ -586,7 +644,7 @@ def p_kurdele():
 
 @model
 def p_kapitalbant():
-    return _lab(bd.Pos(0, 0, 5.0) * (bd.Rot(180, 0, 0) * headband_cap()), "kapitalbant")
+    return _lab(bd.Pos(0, 0, 7.2) * (bd.Rot(180, 0, 0) * headband_cap()), "kapitalbant")
 
 
 if __name__ == "__main__":
