@@ -64,8 +64,15 @@ D_PINS = [30.0, 52.0, 74.0]
 # baş kenar portları
 SW_X, USBC_X, RIB_X = 20.0, 45.6, 57.5
 USBC_Z = B_T + 1.6 + 1.65                  # TP4056 arka kapağa yatık: USB-C ekseni
-BAT = (26.0, 60.0, 10.6, 60.6)             # 503450 LiPo (x0, x1, y0, y1); sağda boşluk duvarına yaslanır
-TP = (37.0, 54.2, 67.0, 95.0)              # TP4056 (USB-C başa bakar)
+# iç düzen (dış görünüm sabit): pil kuyrukta enine, MT3608 ortada enine, TP4056 başta
+BAT_T = 5.0                                # 503450 LiPo kalınlığı
+BAT = (KX0 + 0.3, KX0 + 50.3, KY0 + 0.3, KY0 + 34.3)   # 503450 (x0, x1, y0, y1): 50 mm enine, kuyruk ve yan duvarlara yaslanır
+BOOST_L, BOOST_W, BOOST_H = 36.0, 17.0, 7.0  # MT3608 yükseltici (trimpot ve alttaki pim uçları dahil yükseklik)
+BOOST_REC = 1.5                            # arka kapağın iç yüzünde MT3608 yuvası (dış yüz değişmez)
+BOOST = (KX1 - 0.2 - BOOST_L, KX1 - 0.2, 56.4, 56.4 + BOOST_W)       # menteşe bloğunun hemen üstü
+TP_L, TP_OVER = 26.0, 0.6                  # TP4056 (HW-373) kart boyu, USB-C soketin kart kenarından taşması
+TP_FRONT = CY1 - 1.2 - 0.5                 # soket ön yüzü: kablonun fişi dıştaki cepten sokete tam girer
+TP = (37.0, 54.2, TP_FRONT - TP_OVER - TP_L, TP_FRONT - TP_OVER)   # TP4056 (USB-C başa bakar)
 
 # sırt ve kalem
 R_SP = ((T / 2) ** 2 + SP ** 2) / (2 * SP)
@@ -203,6 +210,8 @@ def page_block():
     usbc = _box(USBC_X - 3.1, USBC_X + 3.1, KY1 - 0.5, CY1 + 1, USBC_Z - 2.1, USBC_Z + 2.1)
     usbc += _ycyl(2.1, KY1 - 0.5, CY1 + 1, USBC_X - 3.1, USBC_Z) + _ycyl(2.1, KY1 - 0.5, CY1 + 1, USBC_X + 3.1, USBC_Z)
     cuts.append(usbc)
+    tx0, tx1, ty0, ty1 = TP
+    cuts.append(_box(tx0 - 0.3, tx1 + 0.3, KY1 - 0.5, ty1 + 0.3, ZC0 - 0.1, B_T + 1.6 + 0.2))   # TP4056 kart ucu yarığı (içte)
     cuts.append(_box(USBC_X - 6.4, USBC_X + 6.4, CY1 - 1.2, CY1 + 1, ZC0 - 0.6, ZC0 + 0.6 + 8 * 0.8 + 0.4))
     cuts.append(_box(RIB_X - 3.2, RIB_X + 3.2, KY1 - 0.5, CY1 + 1, 11.2, 13.0))
     cuts.append(_box(RIB_X - 5.2, RIB_X + 5.2, KY1 - 0.5, KY1 + 2.4, 10.7, 13.5))
@@ -295,15 +304,12 @@ def back_cover():
     block = loc * _box(-BARREL_L / 2 - 2.6, BARREL_L / 2 + 2.6, -3.2, TAIL + 2.0, -(2 * BARREL_R + TAIL_G + 1.4), -B_T + 0.01)
     b += block
     # pil ve TP4056 tırnakları
-    x0, x1, y0, y1 = BAT
-    for cx, sx in ((x0 - 0.4, -1),):
-        for cy, sy in ((y0 - 0.4, -1), (y1 + 0.4, 1)):
-            b += _box(*sorted((cx, cx + sx * 1.2)), *sorted((cy + sy * 1.2, cy - sy * 6)), B_T - 0.01, B_T + 2.6)
-            b += _box(*sorted((cx + sx * 1.2, cx - sx * 6)), *sorted((cy, cy + sy * 1.2)), B_T - 0.01, B_T + 2.6)
-    tx0, tx1, ty0, ty1 = TP
-    b += _box(tx0 - 1.4, tx0 - 0.2, ty0, ty1, B_T - 0.01, B_T + 2.4)
-    b += _box(tx1 + 0.2, tx1 + 1.4, ty0, ty1, B_T - 0.01, B_T + 2.4)
-    b += _box(tx0, tx1, ty0 - 1.4, ty0 - 0.2, B_T - 0.01, B_T + 2.4)
+    x0, x1, y0, y1 = BAT                                                       # pil: kuyruk ve yan duvarlar + baş tarafta iki tırnak
+    b += _box(x0 + 1.0, x0 + 9.0, y1 + 0.3, y1 + 1.5, B_T - 0.01, B_T + 2.6)
+    b += _box(x1 - 9.0, x1 - 1.0, y1 + 0.3, y1 + 1.5, B_T - 0.01, B_T + 2.6)
+    tx0, tx1, ty0, ty1 = TP                                                    # TP4056 rayları; içe itilince MT3608'e dayanır
+    b += _box(tx0 - 1.4, tx0 - 0.2, ty0, KY1 - 0.2, B_T - 0.01, B_T + 2.4)
+    b += _box(tx1 + 0.2, tx1 + 1.4, ty0, KY1 - 0.2, B_T - 0.01, B_T + 2.4)
     b += _cyl(1.1, B_T - 0.01, B_T + 1.8, *B_PIN)
     # ayak cebi (dış yüz), menteşe silindiri ve kuyruk cebi, pim deliği, parmak oyuğu
     cuts = [loc * bd.Pos(0, 0, 0.1) * bd.extrude(_strut_region_local(), amount=-2.1)]
@@ -311,6 +317,8 @@ def back_cover():
     cuts.append(loc * _xcyl(0.95, -BARREL_L / 2 - 2.8, BARREL_L / 2 + 2.8, 0.0, -BARREL_R))
     foot = loc * bd.Pos(0, -STRUT_L + 2.0, 0) * bd.Cylinder(5.0, 3.0)
     cuts.append(foot & _box(0, W, 0, H, -1, 1.6))
+    bx0, bx1, by0, by1 = BOOST                                                 # MT3608 yuvası (iç yüz)
+    cuts.append(_box(bx0 - 0.3, bx1 + 0.3, by0 - 0.3, by1 + 0.3, B_T - BOOST_REC, B_T + 0.1))
     # vidalar (havşa), köşelik ve süs yuvaları
     for x, y in B_SCREWS:
         cuts.append(_cyl(1.7, -0.1, B_T + 0.1, x, y))
@@ -410,9 +418,15 @@ def internals():
     lcd = _box(XB - LCD_W / 2, XB + LCD_W / 2, YB - LCD_H / 2 + VIEW_DY, YB + LCD_H / 2 + VIEW_DY, Z_PCB1, ZC1 - 0.03)
     glass = _box(WX - VIEW_W / 2, WX + VIEW_W / 2, WY - VIEW_H / 2, WY + VIEW_H / 2, ZC1 - 0.03, ZC1 - 0.01)
     x0, x1, y0, y1 = BAT
-    bat = _box(x0, x1, y0, y1, B_T + 0.2, B_T + 5.2)
+    bat = _box(x0, x1, y0, y1, B_T + 0.2, B_T + 0.2 + BAT_T)
     tx0, tx1, ty0, ty1 = TP
-    tp = _box(tx0, tx1, ty0, ty1, B_T, B_T + 1.6) + _box(USBC_X - 4.5, USBC_X + 4.5, ty1 - 7.4, ty1 + 0.2, B_T + 1.6, B_T + 4.9)
+    tp = _box(tx0, tx1, ty0, ty1, B_T, B_T + 1.6) + _box(USBC_X - 4.45, USBC_X + 4.45, ty1 - 7.4 + TP_OVER, ty1 + TP_OVER,
+                                                        USBC_Z - 1.6, USBC_Z + 1.6)
+    bx0, bx1, by0, by1 = BOOST
+    zb = B_T - BOOST_REC
+    boost = _box(bx0, bx1, by0, by1, zb + 1.0, zb + 2.6)                         # kart (altta 1 mm pim ucu payı)
+    boost += _box(bx1 - 12.0, bx1 - 2.0, by0 + 2.0, by0 + 12.0, zb + 2.6, zb + BOOST_H)   # trimpot
+    boost += _box(bx0 + 12.0, bx0 + 18.0, by0 + 5.0, by0 + 11.0, zb + 2.6, zb + 7.0 - 0.1)  # bobin
     sw = _box(SW_X - 4.3, SW_X + 4.3, KY1, KY1 + 3.6, ZC0 + 2.5, ZC0 + 6.0)
     pen = _ycyl(STYLUS_D / 2, H + 1.2 - STYLUS_L + 3.0, H + 1.2, PEN_X, PEN_Z)
     pen += bd.Pos(PEN_X, H + 1.2 - STYLUS_L + 3.0, PEN_Z) * (bd.Rot(90, 0, 0) * bd.Cone(
@@ -420,7 +434,7 @@ def internals():
     pin = loc_pin()
     return [_lab(pcb, "ic_kart", "#d9b81c"), _lab(lcd, "ic_lcd", "#151515"), _lab(glass, "ekran"),
             _lab(bat, "ic_pil", "#b9c3cf"), _lab(tp, "ic_tp4056", "#1f6fd1"), _lab(sw, "ic_anahtar", "#202020"),
-            _lab(pen, "kalem"), pin]
+            _lab(boost, "ic_yukseltici", "#1f5fc0"), _lab(pen, "kalem"), pin]
 
 
 def loc_pin():
@@ -500,13 +514,20 @@ def vm_kalem():
 @model
 def vm_patlatma():
     off = {"on_kapak": 16, "baslik": 22, "arma": 22, "kose0": 22, "kose1": 22, "ekran": 8, "ic_lcd": 8, "ic_kart": 4,
-           "sayfa": 0, "ic_pil": -8, "ic_tp4056": -8, "ic_anahtar": 0, "arka_kapak": -16, "ayak": -24, "pim": -24,
+           "sayfa": 0, "ic_pil": -8, "ic_tp4056": -8, "ic_yukseltici": -8, "ic_anahtar": 0, "arka_kapak": -16, "ayak": -24, "pim": -24,
            "kose2": -22, "kose3": -22, "kose4": -22}
     dx = {"sirt": -14, "kalem": -14, "kapitalbant": -14}
     dy = {"kurdele": 10, "kapitalbant": 10}
     parts = [_lab(bd.Pos(dx.get(p.label, 0), dy.get(p.label, 0), off.get(p.label, 0)) * p, p.label, p.color) for p in book()]
     z0 = min(q.bounding_box().min.Z for q in parts)
     return bd.Compound(children=[_lab(bd.Pos(0, 0, -z0) * q, q.label, q.color) for q in parts], label="vm_patlatma")
+
+
+@model
+def vm_ic():
+    """İç düzen görünümü: ön kapak, ekran ve kart yok; pil, MT3608, TP4056, anahtar ve menteşe görünür."""
+    keep = ("arka_kapak", "sayfa", "ic_pil", "ic_tp4056", "ic_yukseltici", "ic_anahtar", "kurdele", "pim", "ayak")
+    return bd.Compound(children=[q for q in book() if q.label in keep], label="vm_ic")
 
 
 def _flip(shape, top):
@@ -569,6 +590,6 @@ def p_kapitalbant():
 
 
 if __name__ == "__main__":
-    for m in (vademecum, vm_dikey, vm_yatay, vm_kalem, vm_patlatma, p_on_kapak, p_arka_kapak, p_sayfa, p_sirt, p_ayak,
+    for m in (vademecum, vm_dikey, vm_yatay, vm_kalem, vm_patlatma, vm_ic, p_on_kapak, p_arka_kapak, p_sayfa, p_sirt, p_ayak,
               p_baslik, p_arma, p_kose_on, p_kose_arka, p_kurdele, p_kapitalbant):
         m()

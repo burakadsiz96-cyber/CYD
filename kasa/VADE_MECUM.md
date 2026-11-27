@@ -54,12 +54,13 @@ Bu kontroller genel tasarım kuralları; önce küçük parçalarla yazıcının
 - 3× M3×10 havşa başlı (arka kapak; başları pirinç köşeliklerin altında kalır)
 - 4× M3×6 (kartı ön kapağın ayaklarına bağlar)
 - ~14 mm 1,75 mm filament parçası (ayak menteşe pimi)
-- LiPo 503450 (5×34×50 mm, ~1000 mAh, korumalı)
-- TP4056 USB-C şarj modülü (~28×17 mm); USB-C girişi kitabın başında
+- LiPo 503450 (5×34×50 mm, ~1000 mAh): kuyrukta enine yatar
+- TP4056 USB-C şarj modülü, korumalı (HW-373, ~26×17 mm): başta, USB-C girişi baştaki cepte
+- MT3608 yükseltici (36×17 mm, trimpot dahil ≤ 7 mm): ortada enine, arka kapağın iç yüzündeki 1,5 mm'lik yuvada
 - SS12D00 sürgülü anahtar (kitabın başında, sırta yakın)
-- Önerilen: küçük bir 5 V yükseltici (~22×12 mm sınıfı). CYD'nin 5 V girişindeki 3,3 V regülatörü pil
-  gerilimiyle (3,7–4,2 V) sınırda çalışır; pil boşaldıkça ekran kararır ya da kart yeniden başlar.
-  Arka kapakta, TP4056'nın solunda ~25×33 mm boş yer var.
+
+İç düzen `render/vademecum/ic_konyak.png`'de. Dış görünüm değişmedi. Ölçüleri kumpasla doğrula:
+pil kalınlığı ≤ 5 mm, MT3608 ≤ 36×17×7 mm (trimpotun alttaki pim uçlarını kısa kes), TP4056 kartı ≤ 26 mm.
 
 ## Montaj
 
@@ -73,9 +74,14 @@ Bu kontroller genel tasarım kuralları; önce küçük parçalarla yazıcının
    - pili tırnakların arasına bantla;
    - TP4056'yı raylara USB-C başa bakacak şekilde yerleştir.
 
-   Anahtarı sayfa bloğunun baştaki cebine yerleştir. Kablolama: pil → TP4056 B+/B−, OUT+ → anahtar →
-   yükselticinin girişi, yükselticinin 5 V çıkışı → CYD 5 V, eksiler → GND. Yükseltici yoksa OUT+ anahtardan
-   doğrudan CYD 5 V'a gider.
+   - MT3608'i yuvasına bantla.
+
+   Anahtarı sayfa bloğunun baştaki cebine yerleştir. Kablolama (fotoğraftaki devre): pil → TP4056 B+/B−,
+   OUT+ → anahtar → MT3608 VIN+, OUT− → VIN−. MT3608 çıkışını karta bağlamadan önce trimpotla 5,0 V'a ayarla.
+   MT3608 VOUT+/VOUT− → kartın **P1 konnektörü (VIN/GND)**. Kartın USB-C girişi boş kalır ve baştaki
+   pencereden PC kablosu takılır. Kitabın içinde, kartın USB-C girişine takılı bir fişe yer yok: girişle dış
+   yüz arasında 6,7 mm var. Güncellemeden önce anahtarı kapat; açıkken yükselticinin 5 V'u PC'nin USB'siyle
+   birleşir.
 7. Arka kapağı kapat (ön kenar-kuyruk köşesindeki pim yerine oturur). 3× M3×10 havşa başlıyı tak,
    3 arka köşeliği vidaların üstüne bastır.
 8. Kapitalbandı kalemin arka ucuna bastır, kalemi sırtın tepesinden tünele it.
@@ -104,6 +110,7 @@ Değiştirip `cad run vademecum.py` çalıştır, sonra çıktıları yeniden d�
 | `kalem_konyak.png` | Kalem sırttan çekilmiş; kırmızı kapitalbant kalemin başlığı |
 | `arka_konyak.png`, `arka_siyah.png` | Arka kapak ve açık şövale ayağı |
 | `patlatma_konyak.png` | Bütün parçalar ayrık |
+| `ic_konyak.png` | İç düzen (üstten, ön kapak ve kart yok): pil, MT3608, TP4056, anahtar |
 
 <p align="center">
   <img src="render/vademecum/on_yesil.png" width="240" alt="Yeşil">
