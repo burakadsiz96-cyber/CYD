@@ -233,8 +233,10 @@ def page_block():
     usbc += _ycyl(2.1, LY1 - 0.5, CY1 + 1, USBC_X - 3.1, USBC_Z) + _ycyl(2.1, LY1 - 0.5, CY1 + 1, USBC_X + 3.1, USBC_Z)
     cuts.append(usbc)
     cuts.append(_box(USBC_X - 6.4, USBC_X + 6.4, CY1 - 1.2, CY1 + 1, ZC0 - 0.6, ZC0 + 0.6 + 8 * 0.8 + 0.4 + 0.8))
-    cuts.append(_box(SW_X - 3.6, SW_X + 3.6, LY1 - 0.5, CY1 + 1, SW_Z - 1.4, SW_Z + 1.4))
-    cuts.append(_box(USB_X - 6.75, USB_X + 6.75, KY1 - 0.5, CY1 + 1, Z_PCB0 - 5.6, Z_PCB0 + 2.4))
+    cuts.append(_box(SW_X - 5.4, SW_X + 5.4, LY1 - 0.5, CY1 + 1, ZC0 + 0.6 + 0.8 * 1 + 0.4, ZC0 + 0.6 + 0.8 * 7))   # anahtar kolu yarığı 10,8 x 4,4, sayfa çizgileriyle hizalı
+    usb_win = bd.Pos(USB_X, Z_PCB0 - 1.6) * bd.RectangleRounded(12.4, 7.2, 2.5)                   # kartın USB-C'si: fiş gövdesi kadar
+    cuts.append(bd.extrude(bd.Plane.XZ.offset(-(CY1 + 1)) * usb_win, amount=CY1 + 1 - (KY1 - 0.5)))
+    cuts.append(_box(P1_X - 6.0, P1_X + 6.0, KY1 - 0.5, LY1, Z_LOW - 0.1, Z_PCB1))                # P1 fişi ve kabloları için oyuk
     cuts.append(_box(RIB_X - RIB_W / 2 - 0.2, RIB_X + RIB_W / 2 + 0.2, KY1 - 0.5, CY1 + 1, RIB_Z - 0.05, RIB_Z + RIB_T + 0.15))
     cuts.append(_box(RIB_X - RIB_W / 2 - 2.2, RIB_X + RIB_W / 2 + 2.2, KY1 - 0.5, KY1 + 2.4, RIB_Z - 0.5, RIB_Z + 2.3))
     # vida pilotları (arka kapak), pim delikleri (ön kapak, sırt)
